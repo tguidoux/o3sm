@@ -10,7 +10,7 @@ services:
       start_period: 30s
       timeout: 10s
     volumes:
-      - app-db-data:/var/lib/postgresql/data/pgdata
+      - ./db_data:/var/lib/postgresql/data/pgdata
     env_file:
       - .env
     environment:
@@ -162,8 +162,6 @@ services:
 
       # Enable redirection for HTTP and HTTPS
       - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.middlewares=https-redirect
-volumes:
-  app-db-data:
 
 networks:
   traefik-public:

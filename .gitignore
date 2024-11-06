@@ -4,3 +4,6 @@ node_modules/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+db_data/
+.mypy_cache/
+.env

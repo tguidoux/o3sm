@@ -43,7 +43,9 @@ class UpdatePassword(SQLModel):
 class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
-    items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)
+    credentials: list["Credential"] = Relationship(
+        back_populates="owner", cascade_delete=True
+    )
 
 
 # Properties to return via API, id is always required
@@ -57,39 +59,47 @@ class UsersPublic(SQLModel):
 
 
 # Shared properties
-class ItemBase(SQLModel):
-    title: str = Field(min_length=1, max_length=255)
-    description: str | None = Field(default=None, max_length=255)
+class CredentialBase(SQLModel):
+    access_key: str = Field(max_length=255, index=True)
+    secret_key: str = Field(max_length=255)
 
 
-# Properties to receive on item creation
-class ItemCreate(ItemBase):
+# Properties to receive on Credential creation
+class CredentialCreate(SQLModel):
     pass
 
 
-# Properties to receive on item update
-class ItemUpdate(ItemBase):
-    title: str | None = Field(default=None, min_length=1, max_length=255)  # type: ignore
+# Properties to receive on Credential update
+# Cannot be updated
+class CredentialUpdate(CredentialBase):
+    pass
 
 
 # Database model, database table inferred from class name
-class Item(ItemBase, table=True):
+class Credential(CredentialBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    title: str = Field(max_length=255)
     owner_id: uuid.UUID = Field(
         foreign_key="user.id", nullable=False, ondelete="CASCADE"
     )
-    owner: User | None = Relationship(back_populates="items")
+    owner: User | None = Relationship(back_populates="credentials")
 
 
 # Properties to return via API, id is always required
-class ItemPublic(ItemBase):
+class CredentialPublic(SQLModel):
     id: uuid.UUID
     owner_id: uuid.UUID
+    access_key: str
 
 
-class ItemsPublic(SQLModel):
-    data: list[ItemPublic]
+class CredentialPrivate(CredentialBase):
+    id: uuid.UUID
+    owner_id: uuid.UUID
+    access_key: str
+    secret_key: str
+
+
+class CredentialsPublic(SQLModel):
+    data: list[CredentialPublic]
     count: int
 
 

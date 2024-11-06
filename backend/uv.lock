@@ -50,6 +50,7 @@ source = { editable = "." }
 dependencies = [
     { name = "alembic" },
     { name = "bcrypt" },
+    { name = "botocore" },
     { name = "email-validator" },
     { name = "emails" },
     { name = "fastapi", extra = ["standard"] },
@@ -80,6 +81,7 @@ dev = [
 requires-dist = [
     { name = "alembic", specifier = ">=1.12.1,<2.0.0" },
     { name = "bcrypt", specifier = "==4.0.1" },
+    { name = "botocore", specifier = ">=1.35.54" },
     { name = "email-validator", specifier = ">=2.1.0.post1,<3.0.0.0" },
     { name = "emails", specifier = ">=0.6,<1.0" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.114.2,<1.0.0" },
@@ -123,6 +125,20 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/87/69/edacb37481d360d06fc947dab5734aaf511acb7d1a1f9e2849454376c0f8/bcrypt-4.0.1-cp36-abi3-musllinux_1_1_x86_64.whl", hash = "sha256:e9a51bbfe7e9802b5f3508687758b564069ba937748ad7b9e890086290d2f79e", size = 624290 },
     { url = "https://files.pythonhosted.org/packages/aa/ca/6a534669890725cbb8c1fb4622019be31813c8edaa7b6d5b62fc9360a17e/bcrypt-4.0.1-cp36-abi3-win32.whl", hash = "sha256:2caffdae059e06ac23fce178d31b4a702f2a3264c20bfb5ff541b338194d8fab", size = 159428 },
     { url = "https://files.pythonhosted.org/packages/46/81/d8c22cd7e5e1c6a7d48e41a1d1d46c92f17dae70a54d9814f746e6027dec/bcrypt-4.0.1-cp36-abi3-win_amd64.whl", hash = "sha256:8a68f4341daf7522fe8d73874de8906f3a339048ba406be6ddc1b3ccb16fc0d9", size = 152930 },
+]
+
+[[package]]
+name = "botocore"
+version = "1.35.54"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "jmespath" },
+    { name = "python-dateutil" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/71/56/5eacd3dcecdbc36cb5695676c165430282f83cb86ffa75a1a65c34c084c5/botocore-1.35.54.tar.gz", hash = "sha256:131bb59ce59c8a939b31e8e647242d70cf11d32d4529fa4dca01feea1e891a76", size = 12920483 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f2/cd/e79c87014d0ed371335273cbf8a2bc1fdd6dd2071ba6cb9efedb6e311504/botocore-1.35.54-py3-none-any.whl", hash = "sha256:9cca1811094b6cdc144c2c063a3ec2db6d7c88194b04d4277cd34fc8e3473aff", size = 12708560 },
 ]
 
 [[package]]
@@ -579,6 +595,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ed/55/39036716d19cab0747a5020fc7e907f362fbf48c984b14e62127f7e68e5d/jinja2-3.1.4.tar.gz", hash = "sha256:4a3aee7acbbe7303aede8e9648d13b8bf88a429282aa6122a993f0ac800cb369", size = 240245 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/31/80/3a54838c3fb461f6fec263ebf3a3a41771bd05190238de3486aae8540c36/jinja2-3.1.4-py3-none-any.whl", hash = "sha256:bc5dd2abb727a5319567b7a813e6a2e7318c39f4f487cfe6c89c6f9c7d25197d", size = 133271 },
+]
+
+[[package]]
+name = "jmespath"
+version = "1.0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/00/2a/e867e8531cf3e36b41201936b7fa7ba7b5702dbef42922193f05c8976cd6/jmespath-1.0.1.tar.gz", hash = "sha256:90261b206d6defd58fdd5e85f478bf633a2901798906be2ad389150c5c60edbe", size = 25843 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/31/b4/b9b800c45527aadd64d5b442f9b932b00648617eb5d63d2c7a6587b7cafc/jmespath-1.0.1-py3-none-any.whl", hash = "sha256:02e2e4cc71b5bcab88332eebf907519190dd9e6e82107fa7f83b1003a6252980", size = 20256 },
 ]
 
 [[package]]
