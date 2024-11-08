@@ -141,7 +141,7 @@ class Parameter(ParameterBase, table=True):
 
 
 class ParameterPublic(ParameterBase):
-    pass
+    last_modified_date: str
 
 
 class ParametersPublic(SQLModel):

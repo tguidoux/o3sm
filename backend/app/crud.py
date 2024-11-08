@@ -87,7 +87,10 @@ def get_parameter_by_name(*, session: Session, name: str) -> Parameter | None:
 
 
 def create_parameter(
-    *, session: Session, parameter_in: ParameterCreate, owner: User
+    *,
+    session: Session,
+    parameter_in: ParameterCreate,
+    owner: User,
 ) -> Parameter:
 
     last_modified_date: str = get_date_str()

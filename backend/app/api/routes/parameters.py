@@ -101,14 +101,17 @@ def update_parameter(
     """
     Update a parameter.
     """
-    parameter = session.get(Parameter, name)
+    parameter = crud.get_parameter_by_name(
+        session=session,
+        name=name,
+    )
     if not parameter:
         raise HTTPException(status_code=404, detail="Parameter not found")
     if not current_user.is_superuser and (parameter.owner_id != current_user.id):
         raise HTTPException(status_code=400, detail="Not enough permissions")
     update_dict = parameter_in.model_dump(exclude_unset=True)
 
-    update_dict["last_modification_date"] = get_date_str()
+    update_dict["last_modified_date"] = get_date_str()
 
     # Make sure we don't update the name
     update_dict.pop("name", None)
@@ -129,7 +132,10 @@ def delete_parameter(
     """
     Delete a parameter.
     """
-    parameter = session.get(Parameter, name)
+    parameter = crud.get_parameter_by_name(
+        session=session,
+        name=name,
+    )
     if not parameter:
         raise HTTPException(status_code=404, detail="Parameter not found")
     if not current_user.is_superuser and (parameter.owner_id != current_user.id):
