@@ -46,6 +46,9 @@ class User(UserBase, table=True):
     credentials: list["Credential"] = Relationship(
         back_populates="owner", cascade_delete=True
     )
+    parameters: list["Parameter"] = Relationship(
+        back_populates="owner", cascade_delete=True
+    )
 
 
 # Properties to return via API, id is always required
@@ -100,6 +103,49 @@ class CredentialPrivate(CredentialBase):
 
 class CredentialsPublic(SQLModel):
     data: list[CredentialPublic]
+    count: int
+
+
+class ParameterBase(SQLModel):
+    name: str = Field(
+        max_length=255,
+        index=True,
+        unique=True,
+        primary_key=True,
+        nullable=False,
+    )
+    value: str = Field(max_length=255, nullable=False)
+    type: str = Field(max_length=255, default="string")
+    version: int = Field(default=1)
+    data_type: str = Field(max_length=255, default="text")
+
+
+class ParameterCreate(ParameterBase):
+    pass
+
+
+class ParameterUpdate(ParameterBase):
+    value: str
+    type: str
+    data_type: str
+
+
+class Parameter(ParameterBase, table=True):
+    last_modified_date: str = Field(max_length=255)
+    owner_id: uuid.UUID = Field(
+        foreign_key="user.id",
+        nullable=False,
+        ondelete="CASCADE",
+    )
+    owner: User | None = Relationship(back_populates="parameters")
+
+
+class ParameterPublic(ParameterBase):
+    pass
+
+
+class ParametersPublic(SQLModel):
+    data: list[ParameterPublic]
     count: int
 
 
