@@ -58,7 +58,10 @@ def read_parameter(
     """
     Get parameter by name.
     """
-    parameter = session.get(Parameter, name)
+    parameter = crud.get_parameter_by_name(
+        session=session,
+        name=name,
+    )
     if not parameter:
         raise HTTPException(status_code=404, detail="Parameter not found")
     if not current_user.is_superuser and (parameter.owner_id != current_user.id):
