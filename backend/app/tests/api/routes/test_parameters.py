@@ -43,7 +43,11 @@ def test_create_parameter(
     assert (
         created_parameter.get("Type") == "String"
     ), "The parameter type must be 'String'"
-    assert created_parameter.get("Version") == 1, "The parameter version must be 1"
+    assert (
+        created_parameter.get("Version")
+        and isinstance(created_parameter["Version"], int)
+        and created_parameter["Version"] == 1
+    ), "The parameter version must be 1"
     assert (
         created_parameter.get("DataType") == "text"
     ), "The parameter data type must be 'text'"
@@ -107,7 +111,11 @@ def test_read_parameter(
     assert db_parameter.get("Name") == parameter_name
     assert db_parameter.get("Value") == "Test"
     assert db_parameter.get("Type") == "String"
-    assert db_parameter.get("Version") == 1
+    assert (
+        db_parameter.get("Version")
+        and isinstance(db_parameter["Version"], int)
+        and db_parameter["Version"] == 1
+    )
     assert db_parameter.get("DataType") == "text"
     assert db_parameter.get("ARN") == f"arn:o3sm:ssm:::parameter/{parameter_name}"
     assert db_parameter.get("LastModifiedDate")
@@ -194,7 +202,11 @@ def test_update_parameter(
     assert db_parameter.get("Name") == parameter_name
     assert db_parameter.get("Value") == "Test2"
     assert db_parameter.get("Type") == "String"
-    assert db_parameter.get("Version") == 2
+    assert (
+        db_parameter.get("Version")
+        and isinstance(db_parameter["Version"], int)
+        and db_parameter["Version"] == 2
+    )
     assert db_parameter.get("DataType") == "text"
     assert db_parameter.get("ARN") == f"arn:o3sm:ssm:::parameter/{parameter_name}"
     assert db_parameter.get("LastModifiedDate")
@@ -239,7 +251,7 @@ def test_update_parameter_not_enough_permissions(
     normal_user_token_headers: dict[str, str],
     superuser_token_headers: dict[str, str],
     db: Session,
-):
+) -> None:
     user = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
     assert user is not None, "The superuser must exist in the database"
 
@@ -316,7 +328,7 @@ def test_delete_parameter_not_enough_permissions(
     normal_user_token_headers: dict[str, str],
     superuser_token_headers: dict[str, str],
     db: Session,
-):
+) -> None:
     user = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
     assert user is not None, "The superuser must exist in the database"
 
