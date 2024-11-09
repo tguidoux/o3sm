@@ -5,11 +5,9 @@ from app import crud
 from app.api.deps import CurrentUser, SessionDep
 from app.models import (
     Credential,
-    CredentialCreate,
     CredentialPrivate,
     CredentialPublic,
     CredentialsPublic,
-    CredentialUpdate,
     Message,
 )
 from fastapi import APIRouter, HTTPException

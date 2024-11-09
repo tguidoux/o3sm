@@ -3,7 +3,6 @@ SigV4 authentication routines.
 from: https://github.com/dacut/python-aws-sig/blob/master/awssig/sigv4.py
 """
 
-from __future__ import absolute_import
 
 import hmac
 from collections import OrderedDict
@@ -96,7 +95,7 @@ _multispace = re_compile(r"  +")
 log = getLogger("awssig.sigv4")
 
 
-class AWSSigV4Verifier(object):
+class AWSSigV4Verifier:
     # pylint: disable=R0902,R0904
     """
     Verify that a query matches the expectations of AWS SigV4.

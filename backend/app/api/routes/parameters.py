@@ -1,4 +1,3 @@
-import uuid
 from typing import Any
 
 from app import crud

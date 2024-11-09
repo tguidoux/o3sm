@@ -1,13 +1,10 @@
-from unittest.mock import patch
 
 from app import crud
 from app.core.config import settings
-from app.core.security import verify_password
-from app.models import ParameterCreate, User
-from app.tests.utils.utils import random_email, random_lower_string
-from app.utils import generate_password_reset_token
+from app.models import User
+from app.tests.utils.utils import random_lower_string
 from fastapi.testclient import TestClient
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 
 def test_create_parameter(
@@ -196,7 +193,7 @@ def test_update_parameter(
         headers=superuser_token_headers,
         json=data,
     )
-    assert r.status_code == 200, f"The response status code must be 200 OK"
+    assert r.status_code == 200, "The response status code must be 200 OK"
 
     db_parameter: dict[str, str] = r.json()
     assert db_parameter.get("Name") == parameter_name

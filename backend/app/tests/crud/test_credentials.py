@@ -1,6 +1,5 @@
 from app import crud
-from app.core.security import verify_password
-from app.models import User, UserCreate, UserUpdate
+from app.models import UserCreate
 from app.tests.utils.utils import random_email, random_lower_string
 from fastapi.encoders import jsonable_encoder
 from sqlmodel import Session
