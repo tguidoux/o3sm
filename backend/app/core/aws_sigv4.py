@@ -16,6 +16,7 @@ from os.path import splitext
 from re import compile as re_compile
 from string import ascii_letters, digits
 from traceback import extract_stack
+from typing import Any
 from warnings import warn
 
 from pytz import UTC, FixedOffset
@@ -101,7 +102,7 @@ class AWSSigV4Verifier(object):
     Verify that a query matches the expectations of AWS SigV4.
     """
 
-    def __init__(self, **kw) -> None:
+    def __init__(self, **kw: Any) -> None:
         """
         AWSSigV4Verifier(
             request_method: str,
@@ -139,14 +140,14 @@ class AWSSigV4Verifier(object):
             secret key or None to indicate the access key is invalid.
         """
         super(AWSSigV4Verifier, self).__init__()
-        self._request_method = "GET"
-        self._uri_path = "/"
-        self._query_string = ""
-        self._body = b""
-        self._region = ""
-        self._service = ""
+        self._request_method: str = "GET"
+        self._uri_path: str = "/"
+        self._query_string: str = ""
+        self._body: bytes = b""
+        self._region: str = ""
+        self._service: str = ""
         self._key_mapping = lambda *args: None
-        self._headers = {}
+        self._headers: dict[str, list[str]] = dict()
         self._timestamp_mismatch = 60
 
         for key, value in kw.items():
@@ -154,14 +155,14 @@ class AWSSigV4Verifier(object):
         return
 
     @property
-    def request_method(self):
+    def request_method(self) -> str:
         """
         The HTTP method (GET, POST, PUT) used to make the request.
         """
         return self._request_method
 
     @request_method.setter
-    def request_method(self, value):
+    def request_method(self, value) -> None:  # type: ignore
         if not isinstance(value, string_types):
             raise TypeError("Expected request_method to be a string.")
 
@@ -169,14 +170,14 @@ class AWSSigV4Verifier(object):
         return
 
     @property
-    def uri_path(self):
+    def uri_path(self) -> str:
         """
         The path component of the URI.
         """
         return self._uri_path
 
     @uri_path.setter
-    def uri_path(self, value):
+    def uri_path(self, value) -> None:  # type: ignore
         if not isinstance(value, string_types):
             raise TypeError("Expected uri_path to be a string.")
 
@@ -184,14 +185,14 @@ class AWSSigV4Verifier(object):
         return
 
     @property
-    def query_string(self):
+    def query_string(self) -> str:
         """
         The query string portion of the URI.
         """
         return self._query_string
 
     @query_string.setter
-    def query_string(self, value):
+    def query_string(self, value) -> None:  # type: ignore
         if not isinstance(value, string_types):
             raise TypeError("Expected query_string to be a string.")
 
@@ -199,14 +200,14 @@ class AWSSigV4Verifier(object):
         return
 
     @property
-    def body(self):
+    def body(self) -> binary_type:
         """
         The body sent with the HTTP request (for PUT and POST requests).
         """
         return self._body
 
     @body.setter
-    def body(self, value):
+    def body(self, value) -> None:  # type: ignore
         if not isinstance(value, binary_type):
             raise TypeError("Expected body to be a byte array.")
 
@@ -214,14 +215,14 @@ class AWSSigV4Verifier(object):
         return
 
     @property
-    def region(self):
+    def region(self) -> str:
         """
         The region the service is running in.
         """
         return self._region
 
     @region.setter
-    def region(self, value):
+    def region(self, value) -> None:  # type: ignore
         if not isinstance(value, string_types):
             raise TypeError("Expected region to be a string.")
 
@@ -229,14 +230,14 @@ class AWSSigV4Verifier(object):
         return
 
     @property
-    def service(self):
+    def service(self) -> str:
         """
         The name of the service being invoked.
         """
         return self._service
 
     @service.setter
-    def service(self, value):
+    def service(self, value) -> None:  # type: ignore
         if not isinstance(value, string_types):
             raise TypeError("Expected service to be a string.")
 
@@ -244,7 +245,7 @@ class AWSSigV4Verifier(object):
         return
 
     @property
-    def key_mapping(self):
+    def key_mapping(self) -> Any:
         """
         A function that converts an AWS access key and, optionally, an AWS
         token, and returns the corresponding secret key (or None if the
@@ -253,19 +254,19 @@ class AWSSigV4Verifier(object):
         return self._key_mapping
 
     @key_mapping.setter
-    def key_mapping(self, value):
+    def key_mapping(self, value) -> None:  # type: ignore
         self._key_mapping = value
         return
 
     @property
-    def headers(self):
+    def headers(self) -> dict[str, list[str]]:
         """
         The HTTP headers sent with the request
         """
         return self._headers
 
     @headers.setter
-    def headers(self, value):
+    def headers(self, value) -> None:  # type: ignore
         if not isinstance(value, dict):
             raise TypeError("Expected headers to be a dict.")
 
@@ -306,7 +307,7 @@ class AWSSigV4Verifier(object):
         self._headers = new_headers
 
     @property
-    def content_type(self):
+    def content_type(self) -> tuple[str, str] | None:
         """
         A 2-tuple containing the content type and charset of the request body,
         or None if the content type was not specified.
@@ -337,14 +338,14 @@ class AWSSigV4Verifier(object):
         return content_type, charset
 
     @property
-    def timestamp_mismatch(self):
+    def timestamp_mismatch(self) -> int:
         """
         The allowable mismatch in the timestamp, in seconds.
         """
         return self._timestamp_mismatch
 
     @timestamp_mismatch.setter
-    def timestamp_mismatch(self, value):
+    def timestamp_mismatch(self, value) -> None:  # type: ignore
         if value is not None:
             if not isinstance(value, (int, float)):
                 raise TypeError("Expected timestamp_mismatch to be a number.")
@@ -353,17 +354,16 @@ class AWSSigV4Verifier(object):
                 raise ValueError("timestamp_mismatch cannot be negative.")
 
         self._timestamp_mismatch = value
-        return
 
     @property
-    def canonical_uri_path(self):
+    def canonical_uri_path(self) -> str:
         """
         The canonicalized URI path from the request.
         """
         return get_canonical_uri_path(self.uri_path)
 
     @property
-    def query_parameters(self):
+    def query_parameters(self) -> dict[str, list[str]]:
         """
         A key to list of values mapping of the query parameters seen in the
         request.
@@ -371,7 +371,7 @@ class AWSSigV4Verifier(object):
         return normalize_query_parameters(self.query_string)
 
     @property
-    def canonical_query_string(self):
+    def canonical_query_string(self) -> str:
         """
         The canonical query string from the query parameters.
 
@@ -401,7 +401,7 @@ class AWSSigV4Verifier(object):
         return "&".join(sorted(results))
 
     @property
-    def authorization_header_parameters(self):
+    def authorization_header_parameters(self) -> dict[str, str]:
         """
         The parameters from the Authorization header (only).  If the
         Authorization header is not present or is not an AWS SigV4 header, an
@@ -436,12 +436,14 @@ class AWSSigV4Verifier(object):
         return result
 
     @property
-    def signed_headers(self):
+    def signed_headers(self) -> OrderedDict[str, str]:
         """
         An ordered dictionary containing the signed header names and values.
         """
         # See if the signed headers are listed in the query string
-        signed_headers = self.query_parameters.get(_x_amz_signedheaders)
+        signed_headers: list[str] | str | None = self.query_parameters.get(
+            _x_amz_signedheaders
+        )
         if signed_headers is not None:
             signed_headers = url_unquote(signed_headers[0])
         else:
@@ -472,7 +474,7 @@ class AWSSigV4Verifier(object):
         )
 
     @property
-    def request_date_utc(self):
+    def request_date_utc(self) -> str:
         """
         The UTC date of the request in ISO8601 YYYYMMDD format.
 
@@ -483,7 +485,7 @@ class AWSSigV4Verifier(object):
         return self.request_timestamp.astimezone(UTC).strftime("%Y%m%d")
 
     @property
-    def request_timestamp(self):
+    def request_timestamp(self) -> datetime:
         """
         The timestamp of the request as a Timestamp.
 
@@ -491,7 +493,7 @@ class AWSSigV4Verifier(object):
         value is not a valid format for AWS SigV4, an AttributeError exception
         is raised.
         """
-        amz_date_values = self.query_parameters.get(_x_amz_date)
+        amz_date_values: list[str] | str | None = self.query_parameters.get(_x_amz_date)
         if amz_date_values is not None:
             if len(amz_date_values) > 1:
                 raise ValueError("Multiple X-Amz-Date query parameters present")
@@ -519,7 +521,7 @@ class AWSSigV4Verifier(object):
         return date
 
     @property
-    def credential_scope(self):
+    def credential_scope(self) -> str:
         """
         The scope of the credentials to use.
         """
@@ -534,14 +536,16 @@ class AWSSigV4Verifier(object):
         )
 
     @property
-    def access_key(self):
+    def access_key(self) -> str:
         """
         The access key id used to sign the request.
 
         If the access key is not in the same credential scope as this request,
         an AttributeError exception is raised.
         """
-        credential = self.query_parameters.get(_x_amz_credential)
+        credential: list[str] | str | None = self.query_parameters.get(
+            _x_amz_credential
+        )
         if credential is not None:
             credential = url_unquote(credential[0])
         else:
@@ -563,17 +567,20 @@ class AWSSigV4Verifier(object):
         return key
 
     @property
-    def session_token(self):
+    def session_token(self) -> str | None:
         """
         The session token passed with the request, or None if a session token
         was not specified.
         """
-        session_token_values = self.query_parameters.get(_x_amz_security_token)
+        session_token_values: list[str] | str | None = self.query_parameters.get(
+            _x_amz_security_token
+        )
         if session_token_values:
             if len(session_token_values) > 1:
                 raise ValueError(
                     "Multiple X-Amz-Security-Token query parameters provided"
                 )
+            return session_token_values[0]
         else:
             session_token_values = self.headers.get(_x_amz_security_token_lower)
             if not session_token_values:
@@ -581,25 +588,28 @@ class AWSSigV4Verifier(object):
             if len(session_token_values) > 1:
                 raise ValueError("Multiple X-Amz-Security-Token headers provided")
 
-        return session_token_values[0]
+            return session_token_values[0]
 
     @property
-    def request_signature(self):
+    def request_signature(self) -> str:
         """
         The signature passed in the request.
         """
-        signature = self.query_parameters.get(_x_amz_signature)
-        if signature is not None:
-            signature = signature[0]
+        signature: list[str] | None = self.query_parameters.get(_x_amz_signature)
+        if signature:
+            return signature[0]
+
         else:
-            signature = self.authorization_header_parameters.get(_signature)
-            if signature is None:
+            _signature_: str | None = self.authorization_header_parameters.get(
+                _signature
+            )
+            if not _signature_:
                 raise AttributeError("Signature was not passed in the request")
 
-        return signature
+            return _signature_
 
     @property
-    def canonical_request(self):
+    def canonical_request(self) -> str:
         """
         The AWS SigV4 canonical request given parameters from an HTTP request.
         This process is outlined here:
@@ -637,7 +647,7 @@ class AWSSigV4Verifier(object):
         )
 
     @property
-    def string_to_sign(self):
+    def string_to_sign(self) -> str:
         """
         The AWS SigV4 string being signed.
         """
@@ -656,7 +666,7 @@ class AWSSigV4Verifier(object):
         )
 
     @property
-    def expected_signature(self):
+    def expected_signature(self) -> str:
         """
         The AWS SigV4 signature expected from the request.
         """
@@ -694,7 +704,7 @@ class AWSSigV4Verifier(object):
             k_signing, self.string_to_sign.encode("utf-8"), sha256
         ).hexdigest()
 
-    def verify(self) -> None:
+    def verify(self) -> bool:
         """
         Verifies that the request timestamp is not beyond our allowable
         timestamp mismatch and that the request signature matches our
@@ -725,105 +735,7 @@ class AWSSigV4Verifier(object):
         return True
 
 
-class AWSSigV4S3Verifier(AWSSigV4Verifier):
-    """
-    Variant of AWS SigV4 for S3-style authentication.
-
-    Compared to regular SigV4, SigV4S3 has the following differences:
-
-    1. Consecutive slashes in URI paths are preserved: "/a//b" is a distinct
-       object from "/a/b".
-    2. The "x-amz-content-sha256" header must be present and set to either
-       the SHA-256 checksum of the content (uploaded in a single chunk),
-       UNSIGNED-PAYLOAD, or STREAMING-AWS4-HMAC-SHA256-PAYLOAD.
-    """
-
-    @property
-    def canonical_uri_path(self):
-        """
-        The canonicalized URI path from the request.
-
-        This is similar to the SigV4 canonicalized URI path, but with multiple
-        slashes and dots preserved.
-        """
-        if self.uri_path == "":
-            return "/"
-
-        if not self.uri_path.startswith("/"):
-            raise ValueError("URI path is not absolute.")
-
-        # Do *not* handle ., .., etc; these are valid in S3 URLs.
-        return "/".join(
-            [normalize_uri_path_component(el) for el in self.uri_path.split("/")]
-        )
-
-    @property
-    def canonical_query_string(self):
-        """
-        The canonical query string from the query parameters.
-
-        This takes the query string from the request and orders the parameters
-        into a string. The body is always ignored for S3 requests.
-        """
-        results = []
-        for key, values in iteritems(self.query_parameters):
-            # Don't include the signature itself.
-            if key == _x_amz_signature:
-                continue
-
-            for value in values:
-                results.append("%s=%s" % (key, value))
-
-        return "&".join(sorted(results))
-
-    @property
-    def canonical_request(self):
-        """
-        The AWS SigV4S3 canonical request given parameters from an HTTP request.
-        This is similar to the standard AWS SigV4 canonical request, but allows
-        for the replacement of the final sha256(body).hexdigest() line with
-        either 'UNSIGNED-PAYLOAD' or 'STREAMING-AWS4-HMAC-SHA256-PAYLOAD'
-        depending on the value of the (required) x-amz-content-sha256 header.
-        """
-        content_sha256_values = self.headers.get(_x_amz_content_sha256)
-        if not content_sha256_values:
-            raise AttributeError(
-                "x-amz-content-sha256 header was not passed in the request"
-            )
-
-        if len(content_sha256_values) > 1:
-            raise ValueError("Multiple x-amz-content-sha256 headers present")
-
-        content_sha256 = content_sha256_values[0]
-
-        if content_sha256 not in (
-            _streaming_aws4_hmac_sha256_payload,
-            _unsigned_payload,
-        ) and not _sha256_regex.match(content_sha256):
-            raise ValueError(
-                "Invalid value for x-amz-content-sha256 header: %r" % (content_sha256)
-            )
-
-        signed_headers = self.signed_headers
-        header_lines = "".join(["%s:%s\n" % item for item in iteritems(signed_headers)])
-        header_keys = ";".join([key for key in iterkeys(self.signed_headers)])
-
-        return (
-            self.request_method
-            + "\n"
-            + self.canonical_uri_path
-            + "\n"
-            + self.canonical_query_string
-            + "\n"
-            + header_lines
-            + "\n"
-            + header_keys
-            + "\n"
-            + content_sha256
-        )
-
-
-def normalize_uri_path_component(path_component):
+def normalize_uri_path_component(path_component) -> str:  # type: ignore
     """
     normalize_uri_path_component(path_component) -> str
 
@@ -874,13 +786,13 @@ def normalize_uri_path_component(path_component):
             result.write(("%%%02X" % c).encode("ascii"))
             i += 1
 
-    result = result.getvalue()
+    result = result.getvalue()  # type: ignore
     if not isinstance(result, string_types):
-        result = str(result, "utf-8")
-    return result
+        result = result.decode("utf-8")  # type: ignore
+    return result  # type: ignore
 
 
-def get_canonical_uri_path(uri_path):
+def get_canonical_uri_path(uri_path: str) -> str:
     """
     get_canonical_uri_path(uri_path) -> str
 
@@ -936,7 +848,7 @@ def get_canonical_uri_path(uri_path):
     return "/" + "/".join(components)
 
 
-def normalize_query_parameters(query_string):
+def normalize_query_parameters(query_string: str) -> dict[str, list[str]]:
     """
     normalize_query_parameters(query_string) -> dict
 
@@ -950,7 +862,7 @@ def normalize_query_parameters(query_string):
         return {}
 
     components = query_string.split("&")
-    result = {}
+    result: dict[str, list[str]] = dict()
 
     for component in components:
         try:
@@ -974,7 +886,7 @@ def normalize_query_parameters(query_string):
     return dict([(key, sorted(values)) for key, values in iteritems(result)])
 
 
-def _get_callee_depth():
+def _get_callee_depth() -> int:
     # for depth, stack_segment in enumerate(reversed(extract_stack())):
     #    log.warning("DEPTH=%2d SS=%s", depth, stack_segment)
 
@@ -990,6 +902,8 @@ def _get_callee_depth():
             or splitext(path_parts[1])[0] != "sigv4"
         ):
             return depth
+
+    return depth
 
 
 # Month-name to month-value map
@@ -1034,7 +948,7 @@ _rfc_2282_regex = re_compile(
 )
 
 
-def parse_iso8601(s):
+def parse_iso8601(s: str) -> datetime | None:
     """
     Parse a timestamp formatted in ISO 8601 timestamp format and return a
     Timestamp object. If the string is not a valid ISO 8601 timestmap, None
@@ -1073,7 +987,7 @@ def parse_iso8601(s):
         if sign == "-":
             offset_minutes = -offset_minutes
 
-        offset = FixedOffset(offset_minutes)
+        offset = FixedOffset(offset_minutes)  # type: ignore
 
     return datetime(
         year=int(m.group("year")),
@@ -1086,7 +1000,7 @@ def parse_iso8601(s):
     )
 
 
-def parse_rfc2282(s):
+def parse_rfc2282(s: str) -> datetime | None:
     """
     Parse a timestamp formatted in RFC 2282 timestamp format and return a
     Timestamp object. If the string is not a valid RFC 2282 timestmap, None
@@ -1100,7 +1014,7 @@ def parse_rfc2282(s):
     if not m:
         return None
 
-    month = _month_names[m]
+    month = _month_names[m]  # type: ignore
     zone = m.group("timezone")
     assert len(zone) == 5
     sign = zone[0]
@@ -1113,7 +1027,7 @@ def parse_rfc2282(s):
     if offset_minutes == 0:
         offset = UTC
     else:
-        offset = FixedOffset(offset_minutes)
+        offset = FixedOffset(offset_minutes)  # type: ignore
 
     return datetime(
         year=int(m.group("year")),
@@ -1126,7 +1040,7 @@ def parse_rfc2282(s):
     )
 
 
-def is_leap_year(year):
+def is_leap_year(year: int) -> bool:
     """
     Indicates whether the specified year is a leap year.
 
