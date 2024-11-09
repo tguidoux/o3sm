@@ -73,31 +73,6 @@ def create_credential(*, session: SessionDep, current_user: CurrentUser) -> Any:
     return crud.create_credential(session=session, owner=current_user)
 
 
-# Update is not needed for this project, so we will comment it out
-# @router.put("/{id}", response_model=CredentialPublic)
-# def update_credential(
-#     *,
-#     session: SessionDep,
-#     current_user: CurrentUser,
-#     id: uuid.UUID,
-#     credential_in: CredentialUpdate,
-# ) -> Any:
-#     """
-#     Update an credential.
-#     """
-#     credential = session.get(Credential, id)
-#     if not credential:
-#         raise HTTPException(status_code=404, detail="Credential not found")
-#     if not current_user.is_superuser and (credential.owner_id != current_user.id):
-#         raise HTTPException(status_code=400, detail="Not enough permissions")
-#     update_dict = credential_in.model_dump(exclude_unset=True)
-#     credential.sqlmodel_update(update_dict)
-#     session.add(credential)
-#     session.commit()
-#     session.refresh(credential)
-#     return credential
-
-
 @router.delete("/{id}")
 def delete_credential(
     session: SessionDep, current_user: CurrentUser, id: uuid.UUID
