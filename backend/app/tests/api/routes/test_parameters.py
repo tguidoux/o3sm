@@ -19,9 +19,10 @@ def test_create_parameter(
         session=db,
         email=settings.FIRST_SUPERUSER,
     )
+    parameter_name: str = random_lower_string()
     assert owner is not None, "The superuser must exist in the database"
     data: dict[str, str] = dict(
-        Name="Test",
+        Name=parameter_name,
         Value="Test",
         Type="String",
     )
@@ -33,7 +34,9 @@ def test_create_parameter(
     assert r.status_code == 200, "The response status code must be 200 OK"
     created_parameter: dict[str, str] = r.json()
     # {"Name":"param2","Value":"value1","Type":"string","Version":1,"DataType":"text","ARN":"arn:o3sm:ssm:::parameter/param2","LastModifiedDate":1731176446}
-    assert created_parameter.get("Name") == "Test", "The parameter name must be 'Test'"
+    assert (
+        created_parameter.get("Name") == parameter_name
+    ), "The parameter name must be 'Test'"
     assert (
         created_parameter.get("Value") == "Test"
     ), "The parameter value must be 'Test'"
@@ -45,8 +48,8 @@ def test_create_parameter(
         created_parameter.get("DataType") == "text"
     ), "The parameter data type must be 'text'"
     assert (
-        created_parameter.get("ARN") == "arn:o3sm:ssm:::parameter/Test"
-    ), "The parameter ARN must be 'arn:o3sm:ssm:::parameter/Test'"
+        created_parameter.get("ARN") == f"arn:o3sm:ssm:::parameter/{parameter_name}"
+    ), f"The parameter ARN must be 'arn:o3sm:ssm:::parameter/{parameter_name}'"
     assert created_parameter.get("LastModifiedDate")
 
 
