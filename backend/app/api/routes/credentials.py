@@ -65,17 +65,12 @@ def read_credential(
 
 
 @router.post("/", response_model=CredentialPrivate)
-def create_credential(
-    *, session: SessionDep, current_user: CurrentUser, credential_in: CredentialCreate
-) -> Any:
+def create_credential(*, session: SessionDep, current_user: CurrentUser) -> Any:
     """
     Create new credential.
     """
 
-    credential, secret_key = crud.create_credential(session=session, owner=current_user)
-    # Change the return type to CredentialPrivate, this should be done only once while the credential is created
-    credential.secret_key = secret_key
-    return credential
+    return crud.create_credential(session=session, owner=current_user)
 
 
 # Update is not needed for this project, so we will comment it out

@@ -22,6 +22,10 @@ dependencies = [
     "sentry-sdk[fastapi]<2.0.0,>=1.40.6",
     "pyjwt<3.0.0,>=2.8.0",
     "botocore>=1.35.54",
+    "six>=1.16.0",
+    "pytz>=2024.2",
+    "types-pytz>=2024.2.0.20241003",
+    "types-six>=1.16.21.20241105",
 ]
 
 [tool.uv]

@@ -9,5 +9,4 @@ def create_random_credential(db: Session) -> Credential:
     user = create_random_user(db)
     owner_id = user.id
     assert owner_id is not None
-    credential, secret_key = crud.create_credential(session=db, owner=user)
-    return credential
+    return crud.create_credential(session=db, owner=user)

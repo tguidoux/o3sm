@@ -1,10 +1,22 @@
 from typing import Any
 
 from app import crud
-from app.api.deps import CurrentUser, SessionDep
-from app.api.routes.parameters import read_parameter
-from app.models import Message
-from fastapi import APIRouter, Request
+from app.api.deps import SessionDep
+from app.api.routes.parameters import (
+    create_parameter,
+    delete_parameter,
+    read_parameter,
+    read_parameters,
+)
+from app.core.aws_sigv4 import AWSSigV4Verifier, InvalidSignatureError
+from app.models import (
+    AWSParameterPublic,
+    AWSParametersPublic,
+    ParameterCreate,
+    ParameterPublic,
+    ParametersPublic,
+)
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 router = APIRouter()
 
@@ -14,27 +26,105 @@ router = APIRouter()
 @router.put("/")
 @router.delete("/")
 async def main_router(session: SessionDep, request: Request):
-    # print("request", request, type(request))
-    # print("headers", request.headers, type(request.headers))
-    # body = await request.body()
-    # json = await request.json()
-    # print("body", body, type(body))
-    # print("json", json, type(json))
 
-    content_type: str | None = request.headers.get("content-type")
-    x_amz_target: str | None = request.headers.get("x-amz-target")
-    x_amz_date: str | None = request.headers.get("x-amz-date")
-    authorization: str | None = request.headers.get("authorization")
-    from app.models import User
+    method: str = request.method
+    body = await request.body()
+    headers_dict = dict(request.headers)
 
-    u = User(
-        email="dawadw",
+    # Currently only support SSM service
+    # We can easily extend this to support other services
+
+    # Verify the request signature and authorization
+    verifier = AWSSigV4Verifier(
+        request_method=method,
+        uri_path="/",
+        headers=headers_dict,
+        body=body,
+        service="ssm",
+        timestamp_mismatch=None,
     )
 
-    # TODO: Verify access key
-    # TODO: Verify signature of the request
-    # TODO: Retrieve the user of the access key
-    # TODO: Switch to routes api calls in function of the target
+    credential = crud.get_credential_by_access_key(
+        session=session,
+        access_key=verifier.access_key,
+    )
+    if not credential:
+        raise HTTPException(status_code=404, detail="Access key not found")
 
-    param = read_parameter(session, current_user=u, name="param2")
-    return {"Parameter": param}
+    verifier.key_mapping = {credential.access_key: credential.secret_key}
+
+    try:
+        verifier.verify()
+    except InvalidSignatureError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+
+    # Retrieve the owner of the access key
+    owner = credential.owner
+    if not owner:
+        raise HTTPException(status_code=404, detail="Owner not found")
+
+    # Switch to routes api calls in function of the target
+    x_amz_target = headers_dict.get("x-amz-target")
+    if not x_amz_target:
+        raise HTTPException(status_code=400, detail="x-amz-target header is required")
+
+    # TODO: Do a request switching on x_amz_target
+    if x_amz_target == "AmazonSSM.GetParameter":
+        # aws ssm get-parameter --name param2 --endpoint-url http://localhost:8000/ | cat
+        body_json: dict = await request.json()  # type: ignore
+
+        name: str | None = body_json.get("Name")  # type: ignore
+        if not name:
+            raise HTTPException(status_code=400, detail="Name is required")
+
+        param: ParameterPublic = read_parameter(session, current_user=owner, name=name)
+        return AWSParameterPublic(Parameter=param)
+    elif x_amz_target == "AmazonSSM.DescribeParameters":
+        # aws ssm describe-parameters --endpoint-url http://localhost:8000/ --parameter-filters Key=param,Values=xxx,yyy | cat
+
+        body_json: dict = await request.json()  # type: ignore
+
+        # TODO: Implement parameter filters in read_parameters
+        # parameter_filters: list[dict] | None = body_json.get("ParameterFilters")
+
+        parameters: ParametersPublic = read_parameters(session, current_user=owner)
+        return AWSParametersPublic(Parameters=parameters.data)
+    elif x_amz_target == "AmazonSSM.PutParameter":
+        # aws ssm put-parameter --endpoint-url http://localhost:8000/ --debug --name param3 --value "crazyvalue"
+        body_json: dict = await request.json()  # type: ignore
+
+        name: str | None = body_json.get("Name")  # type: ignore
+        value: str | None = body_json.get("Value")
+        type: str | None = body_json.get("Type")
+
+        if not name:
+            raise HTTPException(status_code=400, detail="Name is required")
+
+        if not value:
+            raise HTTPException(status_code=400, detail="Value is required")
+
+        if not type:
+            raise HTTPException(status_code=400, detail="Type is required")
+
+        parameter_in: ParameterCreate = ParameterCreate(**body_json)
+
+        parameter: ParameterPublic = create_parameter(
+            session=session,
+            current_user=owner,
+            parameter_in=parameter_in,
+        )
+        return parameter
+
+    elif x_amz_target == "AmazonSSM.DeleteParameter":
+        # aws ssm delete-parameter --name param3 --endpoint-url http://localhost:8000/ | cat
+        body_json: dict = await request.json()  # type: ignore
+
+        name: str | None = body_json.get("Name")  # type: ignore
+        if not name:
+            raise HTTPException(status_code=400, detail="Name is required")
+
+        message = delete_parameter(session, current_user=owner, name=name)
+        return message
+
+    else:
+        raise HTTPException(status_code=400, detail="Invalid x-amz-target header")

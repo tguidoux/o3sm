@@ -164,6 +164,14 @@ class ParametersPublic(SQLModel):
     count: int
 
 
+class AWSParameterPublic(SQLModel):
+    Parameter: ParameterPublic
+
+
+class AWSParametersPublic(SQLModel):
+    Parameters: list[ParameterPublic]
+
+
 # Generic message
 class Message(SQLModel):
     message: str

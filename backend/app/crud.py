@@ -54,21 +54,22 @@ def authenticate(*, session: Session, email: str, password: str) -> User | None:
 
 
 def get_credential_by_access_key(
-    *, session: Session, access_key: str
+    *,
+    session: Session,
+    access_key: str,
 ) -> Credential | None:
     statement = select(Credential).where(Credential.access_key == access_key)
     credential = session.exec(statement).first()
     return credential
 
 
-def create_credential(*, session: Session, owner: User) -> Tuple[Credential, str]:
+def create_credential(*, session: Session, owner: User) -> Credential:
     access_key = secrets.token_urlsafe(32)
     secret_key = secrets.token_urlsafe(32)
-    hashed_secret_key = get_password_hash(secret_key)
 
     credential = Credential(
         access_key=access_key,
-        secret_key=hashed_secret_key,
+        secret_key=secret_key,
         owner_id=owner.id,
         owner=owner,
     )
@@ -77,7 +78,7 @@ def create_credential(*, session: Session, owner: User) -> Tuple[Credential, str
     session.add(db_credential)
     session.commit()
     session.refresh(db_credential)
-    return db_credential, secret_key
+    return db_credential
 
 
 def get_parameter_by_name(*, session: Session, name: str) -> Parameter | None:
