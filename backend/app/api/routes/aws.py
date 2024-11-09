@@ -28,7 +28,6 @@ router = APIRouter()
 @router.put("/")
 @router.delete("/")
 async def main_router(session: SessionDep, request: Request) -> Any:
-
     method: str = request.method
     body = await request.body()
     headers_dict = dict(request.headers)

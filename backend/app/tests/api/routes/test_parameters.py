@@ -200,7 +200,6 @@ def test_update_parameter_not_found(
     superuser_token_headers: dict[str, str],
     db: Session,
 ) -> None:
-
     owner: User | None = crud.get_user_by_email(
         session=db,
         email=settings.FIRST_SUPERUSER,

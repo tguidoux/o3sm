@@ -93,7 +93,6 @@ def create_parameter(
     parameter_in: ParameterCreate,
     owner: User,
 ) -> Parameter:
-
     last_modified_date: int = get_date_timestamp()
     arn: str = f"arn:o3sm:ssm:::parameter/{parameter_in.Name}"
 
