@@ -1,4 +1,4 @@
-from app.api.routes import credentials, login, parameters, users, utils
+from app.api.routes import aws, credentials, login, parameters, users, utils
 from fastapi import APIRouter
 
 api_router = APIRouter()
@@ -25,4 +25,10 @@ api_router.include_router(
     parameters.router,
     prefix="/parameters",
     tags=["parameters"],
+)
+
+aws_router = APIRouter()
+aws_router.include_router(
+    aws.router,
+    tags=["aws"],
 )

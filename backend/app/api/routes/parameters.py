@@ -64,8 +64,8 @@ def read_parameter(
     )
     if not parameter:
         raise HTTPException(status_code=404, detail="Parameter not found")
-    if not current_user.is_superuser and (parameter.owner_id != current_user.id):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
+    # if not current_user.is_superuser and (parameter.owner_id != current_user.id):
+    # raise HTTPException(status_code=400, detail="Not enough permissions")
     return parameter
 
 
