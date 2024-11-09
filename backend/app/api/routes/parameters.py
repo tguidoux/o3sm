@@ -20,7 +20,10 @@ router = APIRouter()
 
 @router.get("/", response_model=ParametersPublic)
 def read_parameters(
-    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
+    session: SessionDep,
+    current_user: CurrentUser,
+    skip: int = 0,
+    limit: int = 100,
 ) -> Any:
     """
     Retrieve parameters.
@@ -111,10 +114,11 @@ def update_parameter(
         raise HTTPException(status_code=400, detail="Not enough permissions")
     update_dict = parameter_in.model_dump(exclude_unset=True)
 
-    update_dict["last_modified_date"] = get_date_str()
+    update_dict["LastModifiedDate"] = get_date_str()
 
-    # Make sure we don't update the name
-    update_dict.pop("name", None)
+    # Make sure we don't update the name or arn as they are unique
+    update_dict.pop("Name", None)
+    update_dict.pop("ARN", None)
 
     parameter.sqlmodel_update(update_dict)
     session.add(parameter)

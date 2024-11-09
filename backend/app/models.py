@@ -106,18 +106,32 @@ class CredentialsPublic(SQLModel):
     count: int
 
 
+# These are CamelCase because they are used in the AWS API
+# Objective is to return the same format as AWS API
+# {
+#     "Parameter": {
+#         "Name": "mobileapp.ios.fastlane.app.specific.password",
+#         "Type": "String",
+#         "Value": "jzaj-ecyd-xwel-ztca",
+#         "Version": 1,
+#         "LastModifiedDate": "2023-12-05T22:08:01.300000+01:00",
+#         "ARN": "arn:aws:ssm:eu-west-3:948781052762:parameter/mobileapp.ios.fastlane.app.specific.password",
+#         "DataType": "text"
+#     }
+# }
 class ParameterBase(SQLModel):
-    name: str = Field(
+    Name: str = Field(
         max_length=255,
         index=True,
         unique=True,
         primary_key=True,
         nullable=False,
     )
-    value: str = Field(max_length=255, nullable=False)
-    type: str = Field(max_length=255, default="string")
-    version: int = Field(default=1)
-    data_type: str = Field(max_length=255, default="text")
+    Value: str = Field(max_length=255, nullable=False)
+    Type: str = Field(max_length=255, default="string")
+    Version: int = Field(default=1)
+    DataType: str = Field(max_length=255, default="text")
+    ARN: str = Field(nullable=False, default="")
 
 
 class ParameterCreate(ParameterBase):
@@ -125,13 +139,13 @@ class ParameterCreate(ParameterBase):
 
 
 class ParameterUpdate(ParameterBase):
-    value: str
-    type: str
-    data_type: str
+    Value: str
+    Type: str
+    DataType: str
 
 
 class Parameter(ParameterBase, table=True):
-    last_modified_date: str = Field(max_length=255)
+    LastModifiedDate: str = Field(max_length=255)
     owner_id: uuid.UUID = Field(
         foreign_key="user.id",
         nullable=False,
@@ -141,7 +155,7 @@ class Parameter(ParameterBase, table=True):
 
 
 class ParameterPublic(ParameterBase):
-    last_modified_date: str
+    LastModifiedDate: str
 
 
 class ParametersPublic(SQLModel):

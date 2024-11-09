@@ -81,7 +81,7 @@ def create_credential(*, session: Session, owner: User) -> Tuple[Credential, str
 
 
 def get_parameter_by_name(*, session: Session, name: str) -> Parameter | None:
-    statement = select(Parameter).where(Parameter.name == name)
+    statement = select(Parameter).where(Parameter.Name == name)
     parameter = session.exec(statement).first()
     return parameter
 
@@ -94,22 +94,23 @@ def create_parameter(
 ) -> Parameter:
 
     last_modified_date: str = get_date_str()
+    arn: str = f"arn:o3sm:ssm:::parameter/{parameter_in.Name}"
 
     parameter = Parameter(
-        name=parameter_in.name,
-        value=parameter_in.value,
+        Name=parameter_in.Name,
+        Value=parameter_in.Value,
         owner_id=owner.id,
         owner=owner,
-        last_modified_date="",
-        type=parameter_in.type or "string",
-        data_type=parameter_in.data_type or "text",
+        LastModifiedDate=last_modified_date,
+        Type=parameter_in.Type or "string",
+        DataType=parameter_in.DataType or "text",
+        ARN=arn,
     )
 
     db_parameter = Parameter.model_validate(
         parameter,
         update={
             "owner_id": owner.id,
-            "last_modified_date": last_modified_date,
         },
     )
     session.add(db_parameter)
