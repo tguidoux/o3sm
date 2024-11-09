@@ -9,7 +9,7 @@ from sqlmodel import Session
 def test_create_credential(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
-    data: dict[str, str] = dict()
+    data: dict[str, str] = {}
     response = client.post(
         f"{settings.API_V1_STR}/credentials/",
         headers=superuser_token_headers,
@@ -17,8 +17,8 @@ def test_create_credential(
     )
     assert response.status_code == 200
     content = response.json()
-    assert content["access_key"] != None
-    assert content["secret_key"] != None
+    assert content["access_key"] is not None
+    assert content["secret_key"] is not None
     assert "id" in content
     assert "owner_id" in content
 
@@ -33,7 +33,7 @@ def test_read_credential(
     )
     assert response.status_code == 200
     content = response.json()
-    assert content["access_key"] != None
+    assert content["access_key"] is not None
     assert content["id"] == str(item.id)
     assert content["owner_id"] == str(item.owner_id)
 

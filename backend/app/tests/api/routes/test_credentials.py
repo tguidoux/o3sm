@@ -17,7 +17,7 @@ def test_create_credential(
         email=settings.FIRST_SUPERUSER,
     )
     assert owner is not None, "The superuser must exist in the database"
-    data: dict[str, str] = dict()
+    data: dict[str, str] = {}
     r = client.post(
         f"{settings.API_V1_STR}/credentials/",
         headers=superuser_token_headers,
@@ -79,7 +79,6 @@ def test_read_credential(
 def test_read_credential_not_found(
     client: TestClient,
     superuser_token_headers: dict[str, str],
-    db: Session,
 ) -> None:
     r = client.get(
         f"{settings.API_V1_STR}/credentials/{uuid.uuid4()}",
@@ -115,7 +114,6 @@ def test_delete_credential(
 def test_delete_credential_not_found(
     client: TestClient,
     superuser_token_headers: dict[str, str],
-    db: Session,
 ) -> None:
     r = client.delete(
         f"{settings.API_V1_STR}/credentials/{uuid.uuid4()}",

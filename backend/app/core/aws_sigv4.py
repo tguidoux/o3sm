@@ -3,7 +3,6 @@ SigV4 authentication routines.
 from: https://github.com/dacut/python-aws-sig/blob/master/awssig/sigv4.py
 """
 
-
 import hmac
 from collections import OrderedDict
 from datetime import datetime, timedelta
@@ -138,7 +137,7 @@ class AWSSigV4Verifier:
             The return value is either a string specifying the corresponding
             secret key or None to indicate the access key is invalid.
         """
-        super(AWSSigV4Verifier, self).__init__()
+        super().__init__()
         self._request_method: str = "GET"
         self._uri_path: str = "/"
         self._query_string: str = ""
@@ -146,7 +145,7 @@ class AWSSigV4Verifier:
         self._region: str = ""
         self._service: str = ""
         self._key_mapping = lambda *args: None
-        self._headers: dict[str, list[str]] = dict()
+        self._headers: dict[str, list[str]] = {}
         self._timestamp_mismatch = 60
 
         for key, value in kw.items():
@@ -273,14 +272,13 @@ class AWSSigV4Verifier:
 
         for key, header_values in iteritems(value):
             if not isinstance(key, string_types):
-                raise TypeError("Header must be a string: %r" % (key,))
+                raise TypeError(f"Header must be a string: {key!r}")
 
             if isinstance(header_values, string_types):
                 depth = _get_callee_depth()
 
                 warn(
-                    "Header %r value must be an iterable of strings: %r"
-                    % (key, type(header_values).__name__),
+                    f"Header {key} value must be an iterable of strings: {type(header_values).__name__}",
                     category=DeprecationWarning,
                     stacklevel=depth,
                 )
@@ -291,14 +289,12 @@ class AWSSigV4Verifier:
                     hv_iter = iter(header_values)
                 except TypeError:
                     raise TypeError(
-                        "Header %r value must be an iterable of strings: %r"
-                        % (key, type(header_values).__name__)
+                        f"Header {key} value must be an iterable of strings: {type(header_values).__name__}",
                     )
                 for i, el in enumerate(hv_iter):
                     if not isinstance(el, string_types):
                         raise TypeError(
-                            "Header %r value %d must be a string: %r"
-                            % (key, i, type(el).__name__)
+                            f"Header {key} value {i} must be a string: {type(el).__name__}"
                         )
                     values.append(el)
                 new_headers[key] = values
@@ -346,7 +342,7 @@ class AWSSigV4Verifier:
     @timestamp_mismatch.setter
     def timestamp_mismatch(self, value) -> None:  # type: ignore
         if value is not None:
-            if not isinstance(value, (int, float)):
+            if not isinstance(value, int | float):
                 raise TypeError("Expected timestamp_mismatch to be a number.")
 
             if value < 0:
@@ -385,7 +381,7 @@ class AWSSigV4Verifier:
                 continue
 
             for value in values:
-                results.append("%s=%s" % (key, value))
+                results.append(f"{key}={value}")
 
         ct_info = self.content_type
         if ct_info and ct_info[0] == _application_x_www_form_urlencoded:
@@ -395,7 +391,7 @@ class AWSSigV4Verifier:
                 normalize_query_parameters(self.body.decode(charset))
             ):
                 for value in values:
-                    results.append("%s=%s" % (key, value))
+                    results.append(f"{key}={value}")
 
         return "&".join(sorted(results))
 
@@ -424,11 +420,11 @@ class AWSSigV4Verifier:
             try:
                 key, value = parameter.split("=", 1)
             except ValueError:
-                raise AttributeError("Invalid Authorization header: missing '='")
+                raise AttributeError(f"Invalid Authorization header: {parameter}")
 
             if key in result:
                 raise AttributeError(
-                    "Invalid Authorization header: duplicate key %r" % key
+                    f"Invalid Authorization header: duplicate key {key!r}"
                 )
 
             result[key] = value
@@ -457,7 +453,7 @@ class AWSSigV4Verifier:
         canonicalized = sorted([sh.lower() for sh in parts])
         if parts != canonicalized:
             raise AttributeError(
-                "SignedHeaders is not canonicalized: %r" % (signed_headers,)
+                f"SignedHeaders is not canonicalized: {signed_headers}"
             )
 
         # Allow iteration in-order. Replace multiple spaces in header values
@@ -514,7 +510,7 @@ class AWSSigV4Verifier:
             date = parse_rfc2282(date_str)
         if not date:
             raise AttributeError(
-                "Date is not a valid ISO 8601 or RFC 2282 string: %r" % date_str
+                f"Date is not a valid ISO 8601 or RFC 2282 string: {date_str}"
             )
 
         return date
@@ -555,12 +551,11 @@ class AWSSigV4Verifier:
         try:
             key, scope = credential.split("/", 1)
         except ValueError:
-            raise AttributeError("Invalid request credential: %r" % credential)
+            raise AttributeError(f"Invalid request credential: {credential}")
 
         if scope != self.credential_scope:
             raise AttributeError(
-                "Incorrect credential scope: %r (wanted %r)"
-                % (scope, self.credential_scope)
+                f"Incorrect credential scope: {scope} (wanted {self.credential_scope})"
             )
 
         return key
@@ -622,8 +617,13 @@ class AWSSigV4Verifier:
             sha256(body).hexdigest()
         """
         signed_headers = self.signed_headers
-        header_lines = "".join(["%s:%s\n" % item for item in iteritems(signed_headers)])
-        header_keys = ";".join([key for key in iterkeys(self.signed_headers)])
+        # header_lines = "".join("%s:%s\n" % item for item in iteritems(signed_headers))
+        # Use format specifiers instead of percent format
+        header_lines = "".join(
+            f"{key}:{value}\n" for key, value in iteritems(signed_headers)
+        )
+
+        header_keys = ";".join(key for key in iterkeys(self.signed_headers))
 
         ct_info = self.content_type
         if ct_info and ct_info[0] == _application_x_www_form_urlencoded:
@@ -688,7 +688,7 @@ class AWSSigV4Verifier:
             warn(
                 "key_mapping needs to be updated to be a callable object",
                 DeprecationWarning,
-                _get_callee_depth(),
+                stacklevel=_get_callee_depth(),
             )
 
         k_secret = b"AWS4" + secret_key.encode("utf-8")
@@ -719,14 +719,13 @@ class AWSSigV4Verifier:
 
                 if not (min_ts <= req_ts <= max_ts):
                     raise InvalidSignatureError(
-                        "Timestamp mismatch: request timestamp %s outside of "
-                        "allowed range %s to %s" % (req_ts, min_ts, max_ts)
+                        f"Timestamp mismatch: request timestamp {req_ts} outside of "
+                        f"allowed range {min_ts} to {max_ts}"
                     )
 
             if self.expected_signature != self.request_signature:
                 raise InvalidSignatureError(
-                    "Signature mismatch: expected %r, got %r"
-                    % (self.expected_signature, self.request_signature)
+                    f"Signature mismatch: expected {self.expected_signature}, got {self.request_signature}"
                 )
         except (AttributeError, KeyError, ValueError) as e:
             raise InvalidSignatureError(str(e))
@@ -774,7 +773,8 @@ def normalize_uri_path_component(path_component) -> str:  # type: ignore
             if value in _rfc3986_unreserved:
                 result.write(int2byte(value))
             else:
-                result.write(("%%%02X" % value).encode("ascii"))
+                # result.write(("%%%02X" % value).encode("ascii"))
+                result.write(f"%{value:02X}".encode("ascii"))
 
             i += 3
         elif c == _ascii_plus:
@@ -782,7 +782,8 @@ def normalize_uri_path_component(path_component) -> str:  # type: ignore
             result.write(b"%20")
             i += 1
         else:
-            result.write(("%%%02X" % c).encode("ascii"))
+            # result.write(("%%%02X" % c).encode("ascii"))
+            result.write(f"%{c:02X}".encode("ascii"))
             i += 1
 
     result = result.getvalue()  # type: ignore
@@ -861,7 +862,7 @@ def normalize_query_parameters(query_string: str) -> dict[str, list[str]]:
         return {}
 
     components = query_string.split("&")
-    result: dict[str, list[str]] = dict()
+    result: dict[str, list[str]] = {}
 
     for component in components:
         try:
@@ -882,7 +883,7 @@ def normalize_query_parameters(query_string: str) -> dict[str, list[str]]:
         else:
             result[key] = [value]
 
-    return dict([(key, sorted(values)) for key, values in iteritems(result)])
+    return {key: sorted(values) for key, values in iteritems(result)}
 
 
 def _get_callee_depth() -> int:

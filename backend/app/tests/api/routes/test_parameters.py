@@ -1,4 +1,3 @@
-
 from app import crud
 from app.core.config import settings
 from app.models import User
@@ -18,11 +17,11 @@ def test_create_parameter(
     )
     parameter_name: str = random_lower_string()
     assert owner is not None, "The superuser must exist in the database"
-    data: dict[str, str] = dict(
-        Name=parameter_name,
-        Value="Test",
-        Type="String",
-    )
+    data: dict[str, str] = {
+        "Name": parameter_name,
+        "Value": "Test",
+        "Type": "String",
+    }
     r = client.post(
         f"{settings.API_V1_STR}/parameters/",
         headers=superuser_token_headers,
@@ -90,11 +89,7 @@ def test_read_parameter(
     r = client.post(
         f"{settings.API_V1_STR}/parameters/",
         headers=superuser_token_headers,
-        json=dict(
-            Name=parameter_name,
-            Value="Test",
-            Type="String",
-        ),
+        json={"Name": parameter_name, "Value": "Test", "Type": "String"},
     )
 
     assert r.status_code == 200, "The response status code must be 200 OK"
@@ -121,7 +116,6 @@ def test_read_parameter(
 def test_read_parameter_not_found(
     client: TestClient,
     superuser_token_headers: dict[str, str],
-    db: Session,
 ) -> None:
     r = client.get(
         f"{settings.API_V1_STR}/parameters/{random_lower_string()}",
@@ -145,11 +139,7 @@ def test_read_parameter_not_enough_permissions(
     r = client.post(
         f"{settings.API_V1_STR}/parameters/",
         headers=superuser_token_headers,
-        json=dict(
-            Name=parameter_name,
-            Value="Test",
-            Type="String",
-        ),
+        json={"Name": parameter_name, "Value": "Test", "Type": "String"},
     )
 
     assert r.status_code == 200, "The response status code must be 200 OK"
@@ -177,11 +167,7 @@ def test_update_parameter(
     r = client.post(
         f"{settings.API_V1_STR}/parameters/",
         headers=superuser_token_headers,
-        json=dict(
-            Name=parameter_name,
-            Value="Test",
-            Type="String",
-        ),
+        json={"Name": parameter_name, "Value": "Test", "Type": "String"},
     )
 
     assert r.status_code == 200, "The response status code must be 200 OK"
@@ -225,11 +211,7 @@ def test_update_parameter_not_found(
     r = client.post(
         f"{settings.API_V1_STR}/parameters/",
         headers=superuser_token_headers,
-        json=dict(
-            Name=parameter_name,
-            Value="Test",
-            Type="String",
-        ),
+        json={"Name": parameter_name, "Value": "Test", "Type": "String"},
     )
 
     assert r.status_code == 200, "The response status code must be 200 OK"
@@ -257,11 +239,7 @@ def test_update_parameter_not_enough_permissions(
     r = client.post(
         f"{settings.API_V1_STR}/parameters/",
         headers=superuser_token_headers,
-        json=dict(
-            Name=parameter_name,
-            Value="Test",
-            Type="String",
-        ),
+        json={"Name": parameter_name, "Value": "Test", "Type": "String"},
     )
 
     assert r.status_code == 200, "The response status code must be 200 OK"
@@ -290,11 +268,7 @@ def test_delete_parameter(
     r = client.post(
         f"{settings.API_V1_STR}/parameters/",
         headers=superuser_token_headers,
-        json=dict(
-            Name=parameter_name,
-            Value="Test",
-            Type="String",
-        ),
+        json={"Name": parameter_name, "Value": "Test", "Type": "String"},
     )
 
     assert r.status_code == 200, "The response status code must be 200 OK"
@@ -310,7 +284,6 @@ def test_delete_parameter(
 def test_delete_parameter_not_found(
     client: TestClient,
     superuser_token_headers: dict[str, str],
-    db: Session,
 ) -> None:
     r = client.delete(
         f"{settings.API_V1_STR}/parameters/{random_lower_string()}",
@@ -334,11 +307,7 @@ def test_delete_parameter_not_enough_permissions(
     r = client.post(
         f"{settings.API_V1_STR}/parameters/",
         headers=superuser_token_headers,
-        json=dict(
-            Name=parameter_name,
-            Value="Test",
-            Type="String",
-        ),
+        json={"Name": parameter_name, "Value": "Test", "Type": "String"},
     )
 
     assert r.status_code == 200, "The response status code must be 200 OK"
