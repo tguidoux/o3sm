@@ -27,7 +27,7 @@ router = APIRouter()
 @router.get("/")
 @router.put("/")
 @router.delete("/")
-async def main_router(session: SessionDep, request: Request):
+async def main_router(session: SessionDep, request: Request) -> Any:
 
     method: str = request.method
     body = await request.body()
@@ -37,7 +37,7 @@ async def main_router(session: SessionDep, request: Request):
     # We can easily extend this to support other services
 
     # Verify the request signature and authorization
-    verifier = AWSSigV4Verifier(
+    verifier: AWSSigV4Verifier = AWSSigV4Verifier(
         request_method=method,
         uri_path="/",
         headers=headers_dict,
@@ -75,7 +75,7 @@ async def main_router(session: SessionDep, request: Request):
         # aws ssm get-parameter --name param2 --endpoint-url http://localhost:8000/ | cat
         body_json: dict = await request.json()  # type: ignore
 
-        name: str | None = body_json.get("Name")  # type: ignore
+        name: str | None = body_json.get("Name")
         if not name:
             raise HTTPException(status_code=400, detail="Name is required")
 

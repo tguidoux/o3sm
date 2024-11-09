@@ -101,7 +101,7 @@ class AWSSigV4Verifier(object):
     Verify that a query matches the expectations of AWS SigV4.
     """
 
-    def __init__(self, **kw):
+    def __init__(self, **kw) -> None:
         """
         AWSSigV4Verifier(
             request_method: str,
@@ -694,7 +694,7 @@ class AWSSigV4Verifier(object):
             k_signing, self.string_to_sign.encode("utf-8"), sha256
         ).hexdigest()
 
-    def verify(self):
+    def verify(self) -> None:
         """
         Verifies that the request timestamp is not beyond our allowable
         timestamp mismatch and that the request signature matches our
