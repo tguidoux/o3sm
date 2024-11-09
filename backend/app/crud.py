@@ -10,7 +10,7 @@ from app.models import (
     UserCreate,
     UserUpdate,
 )
-from app.utils import get_date_str
+from app.utils import get_date_timestamp
 from sqlmodel import Session, select
 
 
@@ -93,7 +93,7 @@ def create_parameter(
     owner: User,
 ) -> Parameter:
 
-    last_modified_date: str = get_date_str()
+    last_modified_date: int = get_date_timestamp()
     arn: str = f"arn:o3sm:ssm:::parameter/{parameter_in.Name}"
 
     parameter = Parameter(

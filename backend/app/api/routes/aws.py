@@ -36,5 +36,5 @@ async def main_router(session: SessionDep, request: Request):
     # TODO: Retrieve the user of the access key
     # TODO: Switch to routes api calls in function of the target
 
-    param = read_parameter(session, current_user=u, name="param1")
+    param = read_parameter(session, current_user=u, name="param2")
     return {"Parameter": param}

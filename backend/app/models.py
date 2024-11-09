@@ -1,3 +1,4 @@
+import time
 import uuid
 
 from pydantic import EmailStr
@@ -145,7 +146,7 @@ class ParameterUpdate(ParameterBase):
 
 
 class Parameter(ParameterBase, table=True):
-    LastModifiedDate: str = Field(max_length=255)
+    LastModifiedDate: int = Field(default=time.time())
     owner_id: uuid.UUID = Field(
         foreign_key="user.id",
         nullable=False,
@@ -155,7 +156,7 @@ class Parameter(ParameterBase, table=True):
 
 
 class ParameterPublic(ParameterBase):
-    LastModifiedDate: str
+    LastModifiedDate: int
 
 
 class ParametersPublic(SQLModel):

@@ -11,7 +11,7 @@ from app.models import (
     ParametersPublic,
     ParameterUpdate,
 )
-from app.utils import get_date_str
+from app.utils import get_date_timestamp
 from fastapi import APIRouter, HTTPException
 from sqlmodel import func, select
 
@@ -114,7 +114,7 @@ def update_parameter(
         raise HTTPException(status_code=400, detail="Not enough permissions")
     update_dict = parameter_in.model_dump(exclude_unset=True)
 
-    update_dict["LastModifiedDate"] = get_date_str()
+    update_dict["LastModifiedDate"] = get_date_timestamp()
 
     # Make sure we don't update the name or arn as they are unique
     update_dict.pop("Name", None)

@@ -129,3 +129,7 @@ def get_date() -> datetime:
 def get_date_str() -> str:
     # Return with this format: 2023-12-05T22:08:01.300000+01:00
     return get_date().isoformat()
+
+
+def get_date_timestamp() -> int:
+    return int(datetime.now().timestamp())
