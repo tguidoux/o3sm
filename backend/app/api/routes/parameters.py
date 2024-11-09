@@ -119,6 +119,7 @@ def update_parameter(
     # Make sure we don't update the name or arn as they are unique
     update_dict.pop("Name", None)
     update_dict.pop("ARN", None)
+    update_dict["Version"] = parameter.Version + 1
 
     parameter.sqlmodel_update(update_dict)
     session.add(parameter)

@@ -7,6 +7,7 @@ from app.api.routes.parameters import (
     delete_parameter,
     read_parameter,
     read_parameters,
+    update_parameter,
 )
 from app.core.aws_sigv4 import AWSSigV4Verifier, InvalidSignatureError
 from app.models import (
@@ -15,6 +16,7 @@ from app.models import (
     ParameterCreate,
     ParameterPublic,
     ParametersPublic,
+    ParameterUpdate,
 )
 from fastapi import APIRouter, Depends, HTTPException, Request
 
@@ -106,14 +108,27 @@ async def main_router(session: SessionDep, request: Request):
         if not type:
             raise HTTPException(status_code=400, detail="Type is required")
 
-        parameter_in: ParameterCreate = ParameterCreate(**body_json)
+        # Check if the parameter already exists
+        parameter = crud.get_parameter_by_name(session=session, name=name)
+        if parameter:
+            # Create a ParameterUpdate object from parameter and body_json
+            update_json = parameter.model_dump()
+            update_json.update(body_json)
+            parameter_update: ParameterUpdate = ParameterUpdate(**update_json)
 
-        parameter: ParameterPublic = create_parameter(
-            session=session,
-            current_user=owner,
-            parameter_in=parameter_in,
-        )
-        return parameter
+            return update_parameter(
+                session=session,
+                current_user=owner,
+                name=name,
+                parameter_in=parameter_update,
+            )
+        else:
+            parameter_create: ParameterCreate = ParameterCreate(**body_json)
+            return create_parameter(
+                session=session,
+                current_user=owner,
+                parameter_in=parameter_create,
+            )
 
     elif x_amz_target == "AmazonSSM.DeleteParameter":
         # aws ssm delete-parameter --name param3 --endpoint-url http://localhost:8000/ | cat
