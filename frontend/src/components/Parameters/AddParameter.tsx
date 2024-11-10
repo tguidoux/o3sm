@@ -15,17 +15,16 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { type SubmitHandler, useForm } from "react-hook-form"
 
-import { type ApiError, type ItemCreate, ItemsService } from "../../client"
+import { type ApiError, type ParameterPublic, ParametersService } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 import { handleError } from "../../utils"
-import React from "react"
 
-interface AddItemProps {
+interface AddParameterProps {
   isOpen: boolean
   onClose: () => void
 }
 
-const AddItem = ({ isOpen, onClose }: AddItemProps) => {
+const AddItem = ({ isOpen, onClose }: AddParameterProps) => {
   const queryClient = useQueryClient()
   const showToast = useCustomToast()
   const {
@@ -33,18 +32,19 @@ const AddItem = ({ isOpen, onClose }: AddItemProps) => {
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<ItemCreate>({
+  } = useForm<ParameterPublic>({
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
-      title: "",
-      description: "",
+      Name: "",
+      Value: "",
+      Type: "String",
     },
   })
 
   const mutation = useMutation({
-    mutationFn: (data: ItemCreate) =>
-      ItemsService.createItem({ requestBody: data }),
+    mutationFn: (data: ParameterPublic) =>
+      ParametersService.createParameter({ requestBody: data }),
     onSuccess: () => {
       showToast("Success!", "Item created successfully.", "success")
       reset()
@@ -54,11 +54,11 @@ const AddItem = ({ isOpen, onClose }: AddItemProps) => {
       handleError(err, showToast)
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["items"] })
+      queryClient.invalidateQueries({ queryKey: ["parameters"] })
     },
   })
 
-  const onSubmit: SubmitHandler<ItemCreate> = (data) => {
+  const onSubmit: SubmitHandler<ParameterPublic> = (data) => {
     mutation.mutate(data)
   }
 
@@ -72,30 +72,44 @@ const AddItem = ({ isOpen, onClose }: AddItemProps) => {
       >
         <ModalOverlay />
         <ModalContent as="form" onSubmit={handleSubmit(onSubmit)}>
-          <ModalHeader>Add Item</ModalHeader>
+          <ModalHeader>Add Parameter</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
-            <FormControl isRequired isInvalid={!!errors.title}>
-              <FormLabel htmlFor="title">Title</FormLabel>
+            <FormControl isRequired isInvalid={!!errors.Name}>
+              <FormLabel htmlFor="name">Name</FormLabel>
               <Input
-                id="title"
-                {...register("title", {
-                  required: "Title is required.",
+                id="name"
+                {...register("Name", {
+                  required: "Name is required.",
                 })}
-                placeholder="Title"
+                placeholder="Name"
                 type="text"
               />
-              {errors.title && (
-                <FormErrorMessage>{errors.title.message}</FormErrorMessage>
+              {errors.Name && (
+                <FormErrorMessage>{errors.Name.message}</FormErrorMessage>
               )}
             </FormControl>
-            <FormControl mt={4}>
-              <FormLabel htmlFor="description">Description</FormLabel>
+            <FormControl isRequired mt={4}>
+              <FormLabel htmlFor="value">Value</FormLabel>
               <Input
-                id="description"
-                {...register("description")}
-                placeholder="Description"
+                id="value"
+                {...register("Value", {
+                  required: "Value is required.",
+                })}
+                placeholder="Value"
                 type="text"
+              />
+            </FormControl>
+            <FormControl isRequired mt={4}>
+              <FormLabel htmlFor="type">Type</FormLabel>
+              <Input
+                id="type"
+                {...register("Type", {
+                  required: "Type is required.",
+                })}
+                placeholder="Type"
+                type="text"
+                value={"String"}
               />
             </FormControl>
           </ModalBody>

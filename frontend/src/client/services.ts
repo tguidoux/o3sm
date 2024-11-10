@@ -21,6 +21,10 @@ import type {
   CredentialsPublic,
   CredentialPublic,
   CredentialCreate,
+  ParameterCreate,
+  ParameterUpdate,
+  ParametersPublic,
+  ParameterPublic,
 } from "./models"
 
 export type TDataLoginAccessToken = {
@@ -622,6 +626,135 @@ export class CredentialsService {
       url: "/api/v1/credentials/{id}",
       path: {
         id,
+      },
+      errors: {
+        422: `Validation Error`,
+      },
+    })
+  }
+}
+
+
+export type TDataReadParameters = {
+  limit?: number
+  skip?: number
+}
+export type TDataCreateParameter = {
+  requestBody: ParameterCreate
+}
+export type TDataReadParameter = {
+  Name: string
+}
+export type TDataUpdateParameter = {
+  Name: string
+  requestBody: ParameterUpdate
+}
+export type TDataDeleteParameter = {
+  Name: string
+}
+
+export class ParametersService {
+  /**
+   * Read Parameters
+   * Retrieve parameters.
+   * @returns ParametersPublic Successful Response
+   * @throws ApiError
+   */
+  public static readParameters(
+    data: TDataReadParameters = {},
+  ): CancelablePromise<ParametersPublic> {
+    const { limit = 100, skip = 0 } = data
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/parameters/",
+      query: {
+        skip,
+        limit,
+      },
+      errors: {
+        422: `Validation Error`,
+      },
+    })
+  }
+
+  /**
+   * Create Parameter
+   * Create new parameter.
+   * @returns ParameterPublic Successful Response
+   * @throws ApiError
+   */
+  public static createParameter(
+    data: TDataCreateParameter,
+  ): CancelablePromise<ParameterPublic> {
+    const { requestBody } = data
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/parameters/",
+      body: requestBody,
+      mediaType: "application/json",
+      errors: {
+        422: `Validation Error`,
+      },
+    })
+  }
+
+  /**
+   * Read Parameter
+   * Get parameter by ID.
+   * @returns ParameterPublic Successful Response
+   * @throws ApiError
+   */
+  public static readParameter(data: TDataReadParameter): CancelablePromise<ParameterPublic> {
+    const { Name } = data
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/parameters/{Name}",
+      path: {
+        Name,
+      },
+      errors: {
+        422: `Validation Error`,
+      },
+    })
+  }
+
+  /**
+   * Update Parameter
+   * Update a parameter.
+   * @returns ParameterPublic Successful Response
+   * @throws ApiError
+   */
+  public static updateParameter(
+    data: TDataUpdateParameter,
+  ): CancelablePromise<ParameterPublic> {
+    const { Name, requestBody } = data
+    return __request(OpenAPI, {
+      method: "PUT",
+      url: "/api/v1/parameters/{Name}",
+      path: {
+        Name,
+      },
+      body: requestBody,
+      mediaType: "application/json",
+      errors: {
+        422: `Validation Error`,
+      },
+    })
+  }
+
+  /**
+   * Delete Parameter
+   * Delete a parameter.
+   * @returns Message Successful Response
+   * @throws ApiError
+   */
+  public static deleteParameter(data: TDataDeleteParameter): CancelablePromise<Message> {
+    const { Name } = data
+    return __request(OpenAPI, {
+      method: "DELETE",
+      url: "/api/v1/parameters/{Name}",
+      path: {
+        Name,
       },
       errors: {
         422: `Validation Error`,

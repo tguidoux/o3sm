@@ -113,3 +113,32 @@ export type CredentialsPublic = {
 export type CredentialCreate = {}
 
 export type CredentialUpdate = {}
+
+export type ParameterPublic = {
+  Name: string
+  Value: string
+  Type: string
+  Version: string
+  DataType: string
+  ARN: string
+  LastModifiedDate: string
+}
+
+export type ParametersPublic = {
+  data: Array<ParameterPublic>
+  count: number
+}
+
+export type ParameterCreate = {
+  Name: string
+  Value: string
+  Type: string
+}
+
+export type ParameterUpdate = {
+  Value: string
+  Type: string
+  DataType: string
+}
+
+export type ParameterDelete = {}

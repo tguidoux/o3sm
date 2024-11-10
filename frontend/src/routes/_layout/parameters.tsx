@@ -15,10 +15,10 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useEffect } from "react"
 import { z } from "zod"
 
-import { ItemsService } from "../../client"
+import { ParametersService } from "../../client"
 import ActionsMenu from "../../components/Common/ActionsMenu"
 import Navbar from "../../components/Common/Navbar"
-import AddItem from "../../components/Items/AddItem"
+import AddItem from "../../components/Parameters/AddParameter.tsx"
 import { PaginationFooter } from "../../components/Common/PaginationFooter.tsx"
 
 const itemsSearchSchema = z.object({
@@ -26,7 +26,7 @@ const itemsSearchSchema = z.object({
 })
 
 export const Route = createFileRoute("/_layout/parameters")({
-  component: Items,
+  component: Parameters,
   validateSearch: (search) => itemsSearchSchema.parse(search),
 })
 
@@ -35,12 +35,12 @@ const PER_PAGE = 5
 function getItemsQueryOptions({ page }: { page: number }) {
   return {
     queryFn: () =>
-      ItemsService.readItems({ skip: (page - 1) * PER_PAGE, limit: PER_PAGE }),
-    queryKey: ["items", { page }],
+      ParametersService.readParameters({ skip: (page - 1) * PER_PAGE, limit: PER_PAGE }),
+    queryKey: ["parameters", { page }],
   }
 }
 
-function ItemsTable() {
+function ParametersTable() {
   const queryClient = useQueryClient()
   const { page } = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
@@ -65,15 +65,26 @@ function ItemsTable() {
     }
   }, [page, queryClient, hasNextPage])
 
+  function toDateTime(secs: number | string): string {
+    if (typeof secs === "string") {
+      secs = parseInt(secs)
+    }
+    var t = new Date(Date.UTC(1970, 0, 1)); // Epoch
+    t.setUTCSeconds(secs);
+    return t.toUTCString();
+  }
+
   return (
     <>
       <TableContainer>
         <Table size={{ base: "sm", md: "md" }}>
           <Thead>
             <Tr>
-              <Th>ID</Th>
-              <Th>Title</Th>
-              <Th>Description</Th>
+              <Th>Name</Th>
+              <Th>Value</Th>
+              <Th>Type</Th>
+              <Th>Version</Th>
+              <Th>Last Modified Date (UTC)</Th>
               <Th>Actions</Th>
             </Tr>
           </Thead>
@@ -90,20 +101,14 @@ function ItemsTable() {
           ) : (
             <Tbody>
               {items?.data.map((item) => (
-                <Tr key={item.id} opacity={isPlaceholderData ? 0.5 : 1}>
-                  <Td>{item.id}</Td>
-                  <Td isTruncated maxWidth="150px">
-                    {item.title}
-                  </Td>
-                  <Td
-                    color={!item.description ? "ui.dim" : "inherit"}
-                    isTruncated
-                    maxWidth="150px"
-                  >
-                    {item.description || "N/A"}
-                  </Td>
+                <Tr key={item.Name} opacity={isPlaceholderData ? 0.5 : 1}>
+                  <Td>{item.Name}</Td>
+                  <Td>{item.Value}</Td>
+                  <Td isTruncated maxWidth="30px">{item.Type}</Td>
+                  <Td isTruncated maxWidth="30px">{item.Version}</Td>
+                  <Td>{toDateTime(item.LastModifiedDate)}</Td>
                   <Td>
-                    <ActionsMenu type={"Item"} value={item} />
+                    <ActionsMenu type={"Parameter"} value={item} />
                   </Td>
                 </Tr>
               ))}
@@ -121,15 +126,15 @@ function ItemsTable() {
   )
 }
 
-function Items() {
+function Parameters() {
   return (
     <Container maxW="full">
       <Heading size="lg" textAlign={{ base: "center", md: "left" }} pt={12}>
-        Parameters Management
+        Parameters
       </Heading>
 
-      <Navbar type={"Item"} addModalAs={AddItem} />
-      <ItemsTable />
+      <Navbar type={"Parameter"} addModalAs={AddItem} />
+      <ParametersTable />
     </Container>
   )
 }
