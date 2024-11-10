@@ -26,7 +26,7 @@ const itemsSearchSchema = z.object({
 })
 
 export const Route = createFileRoute("/_layout/credentials")({
-  component: Items,
+  component: Credentials,
   validateSearch: (search) => itemsSearchSchema.parse(search),
 })
 
@@ -111,7 +111,7 @@ function CredentialsTable() {
   )
 }
 
-function Items() {
+function Credentials() {
   return (
     <Container maxW="full">
       <Heading size="lg" textAlign={{ base: "center", md: "left" }} pt={12}>
