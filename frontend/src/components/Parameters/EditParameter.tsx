@@ -1,7 +1,6 @@
 import {
   Button,
   FormControl,
-  FormErrorMessage,
   FormLabel,
   Input,
   Modal,
@@ -17,16 +16,12 @@ import { type SubmitHandler, useForm } from "react-hook-form"
 
 import {
   type ApiError,
-  type ItemPublic,
-  type ItemUpdate,
-  ItemsService,
   ParameterPublic,
   ParameterUpdate,
   ParametersService,
 } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 import { handleError } from "../../utils"
-import React from "react"
 
 interface EditParameterProps {
   item: ParameterPublic
@@ -41,7 +36,7 @@ const EditParameter = ({ item, isOpen, onClose }: EditParameterProps) => {
     register,
     handleSubmit,
     reset,
-    formState: { isSubmitting, errors, isDirty },
+    formState: { isSubmitting, isDirty },
   } = useForm<ParameterUpdate>({
     mode: "onBlur",
     criteriaMode: "all",
