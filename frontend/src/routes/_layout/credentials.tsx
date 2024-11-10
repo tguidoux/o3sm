@@ -71,7 +71,6 @@ function CredentialsTable() {
         <Table size={{ base: "sm", md: "md" }}>
           <Thead>
             <Tr>
-              <Th>ID</Th>
               <Th>Access Key ID</Th>
               <Th>Actions</Th>
             </Tr>
@@ -90,9 +89,8 @@ function CredentialsTable() {
             <Tbody>
               {items?.data.map((item) => (
                 <Tr key={item.id} opacity={isPlaceholderData ? 0.5 : 1}>
-                  <Td>{item.id}</Td>
-                  <Td isTruncated maxWidth="150px">
-                    {item.access_key}
+                  <Td>
+                    <code>{item.access_key}</code>
                   </Td>
                   <Td>
                     <ActionsMenu type={"Credential"} value={item} allowEdit={false} />
