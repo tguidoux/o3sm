@@ -25,7 +25,7 @@ const itemsSearchSchema = z.object({
   page: z.number().catch(1),
 })
 
-export const Route = createFileRoute("/_layout/items")({
+export const Route = createFileRoute("/_layout/parameters")({
   component: Items,
   validateSearch: (search) => itemsSearchSchema.parse(search),
 })
@@ -45,7 +45,7 @@ function ItemsTable() {
   const { page } = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const setPage = (page: number) =>
-    navigate({ search: (prev: {[key: string]: string}) => ({ ...prev, page }) })
+    navigate({ search: (prev: { [key: string]: string }) => ({ ...prev, page }) })
 
   const {
     data: items,
@@ -125,7 +125,7 @@ function Items() {
   return (
     <Container maxW="full">
       <Heading size="lg" textAlign={{ base: "center", md: "left" }} pt={12}>
-        Items Management
+        Parameters Management
       </Heading>
 
       <Navbar type={"Item"} addModalAs={AddItem} />

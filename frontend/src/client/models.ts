@@ -97,3 +97,19 @@ export type ValidationError = {
   msg: string
   type: string
 }
+
+export type CredentialPublic = {
+  id: string
+  owner_id: string
+  access_key: string
+  secret_key: string
+}
+
+export type CredentialsPublic = {
+  data: Array<CredentialPublic>
+  count: number
+}
+
+export type CredentialCreate = {}
+
+export type CredentialUpdate = {}

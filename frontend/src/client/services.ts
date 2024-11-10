@@ -18,6 +18,9 @@ import type {
   ItemPublic,
   ItemsPublic,
   ItemUpdate,
+  CredentialsPublic,
+  CredentialPublic,
+  CredentialCreate,
 } from "./models"
 
 export type TDataLoginAccessToken = {
@@ -518,6 +521,105 @@ export class ItemsService {
     return __request(OpenAPI, {
       method: "DELETE",
       url: "/api/v1/items/{id}",
+      path: {
+        id,
+      },
+      errors: {
+        422: `Validation Error`,
+      },
+    })
+  }
+}
+
+export type TDataReadCredentials = {
+  limit?: number
+  skip?: number
+}
+export type TDataCreateCredential = {
+  requestBody: CredentialCreate
+}
+export type TDataReadCredential = {
+  id: string
+}
+export type TDataDeleteCredential = {
+  id: string
+}
+
+export class CredentialsService {
+  /**
+   * Read Credentials
+   * Retrieve credentials.
+   * @returns CredentialsPublic Successful Response
+   * @throws ApiError
+   */
+  public static readCredentials(
+    data: TDataReadCredentials = {},
+  ): CancelablePromise<CredentialsPublic> {
+    const { limit = 100, skip = 0 } = data
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/credentials/",
+      query: {
+        skip,
+        limit,
+      },
+    })
+  }
+
+  /**
+   * Create Credential
+   * Create new credential.
+   * @returns CredentialPublic Successful Response
+   * @throws ApiError
+   */
+  public static createCredential(
+    data: TDataCreateCredential,
+  ): CancelablePromise<CredentialPublic> {
+    const { requestBody } = data
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/credentials/",
+      body: requestBody,
+      mediaType: "application/json",
+      errors: {
+        422: `Validation Error`,
+      },
+    })
+  }
+
+  /**
+   * Read Credential
+   * Get credential by ID.
+   * @returns CredentialPublic Successful Response
+   * @throws ApiError
+   */
+  public static readCredential(data: TDataDeleteCredential): CancelablePromise<CredentialPublic> {
+    const { id } = data
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/credentials/{id}",
+      path: {
+        id,
+      },
+      errors: {
+        422: `Validation Error`,
+      },
+    })
+  }
+
+
+
+  /**
+   * Delete Credential
+   * Delete a credential.
+   * @returns Message Successful Response
+   * @throws ApiError
+   */
+  public static deleteCredential(data: TDataDeleteItem): CancelablePromise<Message> {
+    const { id } = data
+    return __request(OpenAPI, {
+      method: "DELETE",
+      url: "/api/v1/credentials/{id}",
       path: {
         id,
       },
