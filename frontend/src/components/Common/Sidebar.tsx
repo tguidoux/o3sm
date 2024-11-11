@@ -15,14 +15,13 @@ import {
 import { useQueryClient } from "@tanstack/react-query"
 import { FiLogOut, FiMenu } from "react-icons/fi"
 
-import Logo from "/assets/images/fastapi-logo.svg"
+import Logo from "/assets/images/o3sm-logo.png"
 import type { UserPublic } from "../../client"
 import useAuth from "../../hooks/useAuth"
 import SidebarItems from "./SidebarItems"
 
 const Sidebar = () => {
   const queryClient = useQueryClient()
-  const bgColor = useColorModeValue("ui.light", "ui.dark")
   const textColor = useColorModeValue("ui.dark", "ui.light")
   const secBgColor = useColorModeValue("ui.secondary", "ui.darkSlate")
   const currentUser = queryClient.getQueryData<UserPublic>(["currentUser"])
@@ -78,7 +77,6 @@ const Sidebar = () => {
 
       {/* Desktop */}
       <Box
-        bg={bgColor}
         p={3}
         h="100vh"
         position="sticky"
