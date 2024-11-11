@@ -17,82 +17,46 @@ from app.models import (
     ParameterPublic,
     ParametersPublic,
     ParameterUpdate,
+    User,
 )
 from fastapi import APIRouter, HTTPException, Request
 
 router = APIRouter()
 
 
-@router.post("/")
-@router.get("/")
-@router.put("/")
-@router.delete("/")
-async def main_router(session: SessionDep, request: Request) -> Any:
-    method: str = request.method
-    body = await request.body()
-    headers_dict = dict(request.headers)
+class AWSRequestsRouter(object):
 
-    # Currently only support SSM service
-    # We can easily extend this to support other services
+    X_AMZ_TARGETS = {
+        "AmazonSSM.GetParameter": "get_parameter",
+        "AmazonSSM.DescribeParameters": "describe_parameters",
+        "AmazonSSM.PutParameter": "put_parameter",
+        "AmazonSSM.DeleteParameter": "delete_parameter",
+    }
 
-    # Verify the request signature and authorization
-    verifier: AWSSigV4Verifier = AWSSigV4Verifier(
-        request_method=method,
-        uri_path="/",
-        headers=headers_dict,
-        body=body,
-        service="ssm",
-        timestamp_mismatch=None,
-    )
+    def __init__(self, session: SessionDep, request: Request) -> None:
+        self.session = session
+        self.request = request
 
-    credential = crud.get_credential_by_access_key(
-        session=session,
-        access_key=verifier.access_key,
-    )
-    if not credential:
-        raise HTTPException(status_code=404, detail="Access key not found")
-
-    verifier.key_mapping = {credential.access_key: credential.secret_key}
-
-    try:
-        verifier.verify()
-    except InvalidSignatureError as e:
-        raise HTTPException(status_code=403, detail=str(e))
-
-    # Retrieve the owner of the access key
-    owner = credential.owner
-    if not owner:
-        raise HTTPException(status_code=404, detail="Owner not found")
-
-    # Switch to routes api calls in function of the target
-    x_amz_target = headers_dict.get("x-amz-target")
-    if not x_amz_target:
-        raise HTTPException(status_code=400, detail="x-amz-target header is required")
-
-    # TODO: Do a request switching on x_amz_target
-    if x_amz_target == "AmazonSSM.GetParameter":
-        # aws ssm get-parameter --name param2 --endpoint-url http://localhost:8000/ | cat
-        body_json: dict = await request.json()  # type: ignore
+    async def get_parameter(self, owner: User) -> Any:
+        body_json: dict = await self.request.json()  # type: ignore
 
         name: str | None = body_json.get("Name")
         if not name:
             raise HTTPException(status_code=400, detail="Name is required")
 
-        param: ParameterPublic = read_parameter(session, current_user=owner, name=name)
+        param: ParameterPublic = read_parameter(
+            self.session, current_user=owner, name=name
+        )
         return AWSParameterPublic(Parameter=param)
-    elif x_amz_target == "AmazonSSM.DescribeParameters":
-        # aws ssm describe-parameters --endpoint-url http://localhost:8000/ --parameter-filters Key=param,Values=xxx,yyy | cat
 
-        body_json: dict = await request.json()  # type: ignore
+    async def describe_parameters(self, owner: User) -> Any:
+        # body_json: dict = await self.request.json()  # type: ignore
 
-        # TODO: Implement parameter filters in read_parameters
-        # parameter_filters: list[dict] | None = body_json.get("ParameterFilters")
-
-        parameters: ParametersPublic = read_parameters(session, current_user=owner)
+        parameters: ParametersPublic = read_parameters(self.session, current_user=owner)
         return AWSParametersPublic(Parameters=parameters.data)
-    elif x_amz_target == "AmazonSSM.PutParameter":
-        # aws ssm put-parameter --endpoint-url http://localhost:8000/ --debug --name param3 --value "crazyvalue"
-        body_json: dict = await request.json()  # type: ignore
+
+    async def put_parameter(self, owner: User) -> Any:
+        body_json: dict = await self.request.json()  # type: ignore
 
         name: str | None = body_json.get("Name")  # type: ignore
         value: str | None = body_json.get("Value")
@@ -108,7 +72,7 @@ async def main_router(session: SessionDep, request: Request) -> Any:
             raise HTTPException(status_code=400, detail="Type is required")
 
         # Check if the parameter already exists
-        parameter = crud.get_parameter_by_name(session=session, name=name)
+        parameter = crud.get_parameter_by_name(session=self.session, name=name)
         if parameter:
             # Create a ParameterUpdate object from parameter and body_json
             update_json = parameter.model_dump()
@@ -116,7 +80,7 @@ async def main_router(session: SessionDep, request: Request) -> Any:
             parameter_update: ParameterUpdate = ParameterUpdate(**update_json)
 
             return update_parameter(
-                session=session,
+                session=self.session,
                 current_user=owner,
                 name=name,
                 parameter_in=parameter_update,
@@ -124,21 +88,80 @@ async def main_router(session: SessionDep, request: Request) -> Any:
         else:
             parameter_create: ParameterCreate = ParameterCreate(**body_json)
             return create_parameter(
-                session=session,
+                session=self.session,
                 current_user=owner,
                 parameter_in=parameter_create,
             )
 
-    elif x_amz_target == "AmazonSSM.DeleteParameter":
-        # aws ssm delete-parameter --name param3 --endpoint-url http://localhost:8000/ | cat
-        body_json: dict = await request.json()  # type: ignore
+    async def delete_parameter(self, owner: User) -> Any:
+        body_json: dict = await self.request.json()  # type: ignore
 
         name: str | None = body_json.get("Name")  # type: ignore
         if not name:
             raise HTTPException(status_code=400, detail="Name is required")
 
-        message = delete_parameter(session, current_user=owner, name=name)
+        message = delete_parameter(self.session, current_user=owner, name=name)
+
         return message
 
-    else:
-        raise HTTPException(status_code=400, detail="Invalid x-amz-target header")
+    async def main_router(self) -> Any:
+        method: str = self.request.method
+        body = await self.request.body()
+        headers_dict = dict(self.request.headers)
+
+        # Currently only support SSM service
+        # We can easily extend this to support other services
+
+        # Verify the request signature and authorization
+        verifier: AWSSigV4Verifier = AWSSigV4Verifier(
+            request_method=method,
+            uri_path="/",
+            headers=headers_dict,
+            body=body,
+            service="ssm",
+            timestamp_mismatch=None,
+        )
+
+        credential = crud.get_credential_by_access_key(
+            session=self.session,
+            access_key=verifier.access_key,
+        )
+
+        if not credential:
+            raise HTTPException(status_code=404, detail="Access key not found")
+
+        verifier.key_mapping = {credential.access_key: credential.secret_key}
+
+        try:
+            verifier.verify()
+        except InvalidSignatureError as e:
+            raise HTTPException(status_code=403, detail=str(e))
+
+        # Retrieve the owner of the access key
+        owner = credential.owner
+        if not owner:
+            raise HTTPException(status_code=404, detail="Owner not found")
+
+        # Switch to routes api calls in function of the target
+        x_amz_target = headers_dict.get("x-amz-target")
+        if not x_amz_target:
+            raise HTTPException(
+                status_code=400, detail="x-amz-target header is required"
+            )
+
+        if x_amz_target not in self.X_AMZ_TARGETS:
+            raise HTTPException(status_code=400, detail="Invalid x-amz-target header")
+
+        # Call the method corresponding to the x_amz_target
+        method_name = self.X_AMZ_TARGETS[x_amz_target]
+        method = getattr(self, method_name)
+        return await method(owner)
+
+
+@router.post("/")
+@router.get("/")
+@router.put("/")
+@router.delete("/")
+async def main_router(session: SessionDep, request: Request) -> Any:
+    aws_router = AWSRequestsRouter(session, request)
+    return await aws_router.main_router()
