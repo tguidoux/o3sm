@@ -13,6 +13,7 @@ from app.core.aws_sigv4 import AWSSigV4Verifier, InvalidSignatureError
 from app.models import (
     AWSParameterPublic,
     AWSParametersPublic,
+    Credential,
     ParameterCreate,
     ParameterPublic,
     ParametersPublic,
@@ -104,7 +105,7 @@ class AWSRequestsRouter(object):
 
         return message
 
-    async def main_router(self) -> Any:
+    async def _verify_request(self) -> Credential:
         method: str = self.request.method
         body = await self.request.body()
         headers_dict = dict(self.request.headers)
@@ -136,6 +137,14 @@ class AWSRequestsRouter(object):
             verifier.verify()
         except InvalidSignatureError as e:
             raise HTTPException(status_code=403, detail=str(e))
+
+        return credential
+
+    async def main_router(self) -> Any:
+        headers_dict = dict(self.request.headers)
+
+        # Validate the request
+        credential = await self._verify_request()
 
         # Retrieve the owner of the access key
         owner = credential.owner
