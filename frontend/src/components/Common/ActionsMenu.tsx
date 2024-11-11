@@ -11,7 +11,6 @@ import { FiEdit, FiTrash } from "react-icons/fi"
 
 import type { ItemPublic, UserPublic, CredentialPublic, ParameterPublic } from "../../client"
 import EditUser from "../Admin/EditUser"
-import EditItem from "../Items/EditItem"
 import EditParameter from "../Parameters/EditParameter"
 import Delete from "./DeleteAlert"
 
@@ -65,14 +64,6 @@ const ActionsMenu = ({ type, value, disabled, allowEdit = true, allowDelete = tr
             onClose={editUserModal.onClose}
           />
         )}
-        {type === "Item" && (
-          <EditItem
-            item={value as ItemPublic}
-            isOpen={editUserModal.isOpen}
-            onClose={editUserModal.onClose}
-          />
-        )}
-
         {type === "Parameter" && (
           <EditParameter
             item={value as ParameterPublic}
