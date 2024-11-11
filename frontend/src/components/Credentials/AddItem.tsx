@@ -78,7 +78,14 @@ const AddItem = ({ isOpen, onClose }: AddCredentialProps) => {
               newCredential ? (
                 <>
                   <p><b>Access Key ID</b></p><code>{newCredential.access_key}</code><br></br><br></br>
-                  <p><b>Secret Access Key</b></p><code>{newCredential.secret_key}</code>
+                  <p><b>Secret Access Key</b></p><code>{newCredential.secret_key}</code><br></br><br></br>
+                  <p><b>Easy cli setup</b></p>
+                  <code>
+                    {"export AWS_ACCESS_KEY_ID=\"" + newCredential.access_key + "\"\n"}<br></br>
+                    {"export AWS_SECRET_ACCESS_KEY=\"" + newCredential.secret_key + "\"\n"}<br></br>
+                    {"export AWS_DEFAULT_REGION=\"\""}<br></br>
+                    {"export AWS_ENDPOINT_URL=\"" + import.meta.env.VITE_API_URL + "\""}
+                  </code>
                 </>
               ) : (
                 <p>Failed to create credential.</p>
