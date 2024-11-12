@@ -11,7 +11,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { type SubmitHandler, useForm } from "react-hook-form"
 
-import { type ApiError, type CredentialCreate, CredentialPublic, CredentialsService } from "../../client"
+import { type ApiError, type CredentialCreate, CredentialPublic, CredentialsService, OpenAPI } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 import { handleError } from "../../utils"
 import { useState } from "react"
@@ -84,7 +84,7 @@ const AddItem = ({ isOpen, onClose }: AddCredentialProps) => {
                     {"export AWS_ACCESS_KEY_ID=\"" + newCredential.access_key + "\"\n"}<br></br>
                     {"export AWS_SECRET_ACCESS_KEY=\"" + newCredential.secret_key + "\"\n"}<br></br>
                     {"export AWS_DEFAULT_REGION=\"\""}<br></br>
-                    {"export AWS_ENDPOINT_URL=\"" + import.meta.env.VITE_API_URL + "\""}
+                    {"export AWS_ENDPOINT_URL=\"" + OpenAPI.BASE + "\""}
                   </code>
                 </>
               ) : (
