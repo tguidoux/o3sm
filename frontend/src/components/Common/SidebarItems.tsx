@@ -1,7 +1,13 @@
 import { Box, Flex, Icon, Text, useColorModeValue } from "@chakra-ui/react"
 import { useQueryClient } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { FiBriefcase, FiHome, FiSettings, FiUsers, FiUser } from "react-icons/fi"
+import {
+  FiBriefcase,
+  FiHome,
+  FiSettings,
+  FiUser,
+  FiUsers,
+} from "react-icons/fi"
 
 import type { UserPublic } from "../../client"
 

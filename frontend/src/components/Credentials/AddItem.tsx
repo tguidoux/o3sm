@@ -11,10 +11,16 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { type SubmitHandler, useForm } from "react-hook-form"
 
-import { type ApiError, type CredentialCreate, CredentialPublic, CredentialsService, OpenAPI } from "../../client"
+import { useState } from "react"
+import {
+  type ApiError,
+  type CredentialCreate,
+  type CredentialPublic,
+  CredentialsService,
+  OpenAPI,
+} from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 import { handleError } from "../../utils"
-import { useState } from "react"
 
 interface AddCredentialProps {
   isOpen: boolean
@@ -77,14 +83,29 @@ const AddItem = ({ isOpen, onClose }: AddCredentialProps) => {
             {created ? (
               newCredential ? (
                 <>
-                  <p><b>Access Key ID</b></p><code>{newCredential.access_key}</code><br></br><br></br>
-                  <p><b>Secret Access Key</b></p><code>{newCredential.secret_key}</code><br></br><br></br>
-                  <p><b>Easy cli setup</b></p>
+                  <p>
+                    <b>Access Key ID</b>
+                  </p>
+                  <code>{newCredential.access_key}</code>
+                  <br />
+                  <br />
+                  <p>
+                    <b>Secret Access Key</b>
+                  </p>
+                  <code>{newCredential.secret_key}</code>
+                  <br />
+                  <br />
+                  <p>
+                    <b>Easy cli setup</b>
+                  </p>
                   <code>
-                    {"export AWS_ACCESS_KEY_ID=\"" + newCredential.access_key + "\"\n"}<br></br>
-                    {"export AWS_SECRET_ACCESS_KEY=\"" + newCredential.secret_key + "\"\n"}<br></br>
-                    {"export AWS_DEFAULT_REGION=\"\""}<br></br>
-                    {"export AWS_ENDPOINT_URL=\"" + OpenAPI.BASE + "\""}
+                    {`export AWS_ACCESS_KEY_ID=\"${newCredential.access_key}\"\n`}
+                    <br />
+                    {`export AWS_SECRET_ACCESS_KEY=\"${newCredential.secret_key}\"\n`}
+                    <br />
+                    {'export AWS_DEFAULT_REGION=""'}
+                    <br />
+                    {`export AWS_ENDPOINT_URL=\"${OpenAPI.BASE}\"`}
                   </code>
                 </>
               ) : (
@@ -93,17 +114,14 @@ const AddItem = ({ isOpen, onClose }: AddCredentialProps) => {
             ) : (
               <p>Are you sure you want to create credential?</p>
             )}
-
           </ModalBody>
 
           <ModalFooter gap={3}>
-            {
-              !created && (
-                <Button variant="primary" type="submit" isLoading={isSubmitting}>
-                  Yes
-                </Button>
-              )
-            }
+            {!created && (
+              <Button variant="primary" type="submit" isLoading={isSubmitting}>
+                Yes
+              </Button>
+            )}
             <Button onClick={onCustomClose}>Cancel</Button>
           </ModalFooter>
         </ModalContent>

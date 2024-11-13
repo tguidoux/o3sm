@@ -4,27 +4,23 @@ import { request as __request } from "./core/request"
 
 import type {
   Body_login_login_access_token,
+  CredentialCreate,
+  CredentialPublic,
+  CredentialsPublic,
   Message,
   NewPassword,
-  Token,
-  UserPublic,
-  UpdatePassword,
-  UserCreate,
-  UserRegister,
-  UsersPublic,
-  UserUpdate,
-  UserUpdateMe,
-  ItemCreate,
-  ItemPublic,
-  ItemsPublic,
-  ItemUpdate,
-  CredentialsPublic,
-  CredentialPublic,
-  CredentialCreate,
   ParameterCreate,
+  ParameterPublic,
   ParameterUpdate,
   ParametersPublic,
-  ParameterPublic,
+  Token,
+  UpdatePassword,
+  UserCreate,
+  UserPublic,
+  UserRegister,
+  UserUpdate,
+  UserUpdateMe,
+  UsersPublic,
 } from "./models"
 
 export type TDataLoginAccessToken = {
@@ -40,6 +36,7 @@ export type TDataRecoverPasswordHtmlContent = {
   email: string
 }
 
+// biome-ignore lint/complexity/noStaticOnlyClass: project has been built as is
 export class LoginService {
   /**
    * Login Access Token
@@ -57,7 +54,7 @@ export class LoginService {
       formData: formData,
       mediaType: "application/x-www-form-urlencoded",
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -92,7 +89,7 @@ export class LoginService {
         email,
       },
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -113,7 +110,7 @@ export class LoginService {
       body: requestBody,
       mediaType: "application/json",
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -135,7 +132,7 @@ export class LoginService {
         email,
       },
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -168,6 +165,7 @@ export type TDataDeleteUser = {
   userId: string
 }
 
+// biome-ignore lint/complexity/noStaticOnlyClass: project has been built as is
 export class UsersService {
   /**
    * Read Users
@@ -187,7 +185,7 @@ export class UsersService {
         limit,
       },
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -208,7 +206,7 @@ export class UsersService {
       body: requestBody,
       mediaType: "application/json",
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -255,7 +253,7 @@ export class UsersService {
       body: requestBody,
       mediaType: "application/json",
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -276,7 +274,7 @@ export class UsersService {
       body: requestBody,
       mediaType: "application/json",
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -297,7 +295,7 @@ export class UsersService {
       body: requestBody,
       mediaType: "application/json",
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -319,7 +317,7 @@ export class UsersService {
         user_id: userId,
       },
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -343,7 +341,7 @@ export class UsersService {
       body: requestBody,
       mediaType: "application/json",
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -363,7 +361,7 @@ export class UsersService {
         user_id: userId,
       },
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -373,6 +371,7 @@ export type TDataTestEmail = {
   emailTo: string
 }
 
+// biome-ignore lint/complexity/noStaticOnlyClass: project has been built as is
 export class UtilsService {
   /**
    * Test Email
@@ -389,7 +388,7 @@ export class UtilsService {
         email_to: emailTo,
       },
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -421,6 +420,7 @@ export type TDataDeleteCredential = {
   id: string
 }
 
+// biome-ignore lint/complexity/noStaticOnlyClass: project has been built as is
 export class CredentialsService {
   /**
    * Read Credentials
@@ -458,7 +458,7 @@ export class CredentialsService {
       body: requestBody,
       mediaType: "application/json",
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -469,7 +469,9 @@ export class CredentialsService {
    * @returns CredentialPublic Successful Response
    * @throws ApiError
    */
-  public static readCredential(data: TDataDeleteCredential): CancelablePromise<CredentialPublic> {
+  public static readCredential(
+    data: TDataDeleteCredential,
+  ): CancelablePromise<CredentialPublic> {
     const { id } = data
     return __request(OpenAPI, {
       method: "GET",
@@ -478,12 +480,10 @@ export class CredentialsService {
         id,
       },
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
-
-
 
   /**
    * Delete Credential
@@ -491,7 +491,9 @@ export class CredentialsService {
    * @returns Message Successful Response
    * @throws ApiError
    */
-  public static deleteCredential(data: TDataDeleteCredential): CancelablePromise<Message> {
+  public static deleteCredential(
+    data: TDataDeleteCredential,
+  ): CancelablePromise<Message> {
     const { id } = data
     return __request(OpenAPI, {
       method: "DELETE",
@@ -500,12 +502,11 @@ export class CredentialsService {
         id,
       },
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
 }
-
 
 export type TDataReadParameters = {
   limit?: number
@@ -525,6 +526,7 @@ export type TDataDeleteParameter = {
   Name: string
 }
 
+// biome-ignore lint/complexity/noStaticOnlyClass: project has been built as is
 export class ParametersService {
   /**
    * Read Parameters
@@ -544,7 +546,7 @@ export class ParametersService {
         limit,
       },
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -565,7 +567,7 @@ export class ParametersService {
       body: requestBody,
       mediaType: "application/json",
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -576,7 +578,9 @@ export class ParametersService {
    * @returns ParameterPublic Successful Response
    * @throws ApiError
    */
-  public static readParameter(data: TDataReadParameter): CancelablePromise<ParameterPublic> {
+  public static readParameter(
+    data: TDataReadParameter,
+  ): CancelablePromise<ParameterPublic> {
     const { Name } = data
     return __request(OpenAPI, {
       method: "GET",
@@ -585,7 +589,7 @@ export class ParametersService {
         Name,
       },
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -609,7 +613,7 @@ export class ParametersService {
       body: requestBody,
       mediaType: "application/json",
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -620,7 +624,9 @@ export class ParametersService {
    * @returns Message Successful Response
    * @throws ApiError
    */
-  public static deleteParameter(data: TDataDeleteParameter): CancelablePromise<Message> {
+  public static deleteParameter(
+    data: TDataDeleteParameter,
+  ): CancelablePromise<Message> {
     const { Name } = data
     return __request(OpenAPI, {
       method: "DELETE",
@@ -629,7 +635,7 @@ export class ParametersService {
         Name,
       },
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }

@@ -5,17 +5,17 @@ import ReactDOM from "react-dom/client"
 import { routeTree } from "./routeTree.gen"
 
 import { StrictMode } from "react"
+import React from "react"
 import { OpenAPI } from "./client"
 import theme from "./theme"
-import React from "react"
 
 interface O3SMConfig {
-  VITE_API_URL?: string;
+  VITE_API_URL?: string
 }
 
 declare global {
   interface Window {
-    O3SM_CONFIG: O3SMConfig;
+    O3SM_CONFIG: O3SMConfig
   }
 }
 

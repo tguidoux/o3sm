@@ -18,8 +18,8 @@ import { z } from "zod"
 import { CredentialsService } from "../../client/index.ts"
 import ActionsMenu from "../../components/Common/ActionsMenu.tsx"
 import Navbar from "../../components/Common/Navbar.tsx"
-import AddItem from "../../components/Credentials/AddItem.tsx"
 import { PaginationFooter } from "../../components/Common/PaginationFooter.tsx"
+import AddItem from "../../components/Credentials/AddItem.tsx"
 
 const itemsSearchSchema = z.object({
   page: z.number().catch(1),
@@ -35,7 +35,10 @@ const PER_PAGE = 5
 function getItemsQueryOptions({ page }: { page: number }) {
   return {
     queryFn: () =>
-      CredentialsService.readCredentials({ skip: (page - 1) * PER_PAGE, limit: PER_PAGE }),
+      CredentialsService.readCredentials({
+        skip: (page - 1) * PER_PAGE,
+        limit: PER_PAGE,
+      }),
     queryKey: ["credentials", { page }],
   }
 }
@@ -45,7 +48,9 @@ function CredentialsTable() {
   const { page } = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const setPage = (page: number) =>
-    navigate({ search: (prev: { [key: string]: string }) => ({ ...prev, page }) })
+    navigate({
+      search: (prev: { [key: string]: string }) => ({ ...prev, page }),
+    })
 
   const {
     data: items,
@@ -93,7 +98,11 @@ function CredentialsTable() {
                     <code>{item.access_key}</code>
                   </Td>
                   <Td>
-                    <ActionsMenu type={"Credential"} value={item} allowEdit={false} />
+                    <ActionsMenu
+                      type={"Credential"}
+                      value={item}
+                      allowEdit={false}
+                    />
                   </Td>
                 </Tr>
               ))}

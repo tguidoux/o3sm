@@ -15,7 +15,11 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { type SubmitHandler, useForm } from "react-hook-form"
 
-import { type ApiError, type ParameterPublic, ParametersService } from "../../client"
+import {
+  type ApiError,
+  type ParameterPublic,
+  ParametersService,
+} from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 import { handleError } from "../../utils"
 

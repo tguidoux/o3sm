@@ -9,7 +9,12 @@ import {
 import { BsThreeDotsVertical } from "react-icons/bs"
 import { FiEdit, FiTrash } from "react-icons/fi"
 
-import type { ItemPublic, UserPublic, CredentialPublic, ParameterPublic } from "../../client"
+import type {
+  CredentialPublic,
+  ItemPublic,
+  ParameterPublic,
+  UserPublic,
+} from "../../client"
 import EditUser from "../Admin/EditUser"
 import EditParameter from "../Parameters/EditParameter"
 import Delete from "./DeleteAlert"
@@ -22,7 +27,13 @@ interface ActionsMenuProps {
   allowDelete?: boolean
 }
 
-const ActionsMenu = ({ type, value, disabled, allowEdit = true, allowDelete = true }: ActionsMenuProps) => {
+const ActionsMenu = ({
+  type,
+  value,
+  disabled,
+  allowEdit = true,
+  allowDelete = true,
+}: ActionsMenuProps) => {
   const editUserModal = useDisclosure()
   const deleteModal = useDisclosure()
 
@@ -54,8 +65,6 @@ const ActionsMenu = ({ type, value, disabled, allowEdit = true, allowDelete = tr
               Delete {type}
             </MenuItem>
           )}
-
-
         </MenuList>
         {type === "User" && (
           <EditUser

@@ -110,8 +110,10 @@ export type CredentialsPublic = {
   count: number
 }
 
+// biome-ignore lint/complexity/noBannedTypes: This is a generated type based on the OpenAPI schema
 export type CredentialCreate = {}
 
+// biome-ignore lint/complexity/noBannedTypes: This is a generated type based on the OpenAPI schema
 export type CredentialUpdate = {}
 
 export type ParameterPublic = {
@@ -141,4 +143,5 @@ export type ParameterUpdate = {
   DataType: string
 }
 
+// biome-ignore lint/complexity/noBannedTypes: This is a generated type based on the OpenAPI schema
 export type ParameterDelete = {}

@@ -16,8 +16,8 @@ import { type SubmitHandler, useForm } from "react-hook-form"
 
 import {
   type ApiError,
-  ParameterPublic,
-  ParameterUpdate,
+  type ParameterPublic,
+  type ParameterUpdate,
   ParametersService,
 } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"

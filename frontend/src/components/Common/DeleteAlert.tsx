@@ -11,7 +11,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import React from "react"
 import { useForm } from "react-hook-form"
 
-import { UsersService, CredentialsService, ParametersService } from "../../client"
+import {
+  CredentialsService,
+  ParametersService,
+  UsersService,
+} from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 
 interface DeleteProps {
@@ -45,11 +49,14 @@ const Delete = ({ type, id, isOpen, onClose }: DeleteProps) => {
   function getQueryKey(type: string): string {
     if (type === "Item") {
       return "items"
-    } else if (type === "User") {
+    }
+    if (type === "User") {
       return "users"
-    } else if (type === "Credential") {
+    }
+    if (type === "Credential") {
       return "credentials"
-    } else if (type === "Parameter") {
+    }
+    if (type === "Parameter") {
       return "parameters"
     }
     return ""
