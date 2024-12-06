@@ -3,7 +3,6 @@ import os
 import secrets
 from typing import Any
 
-from app.api.deps import CurrentUser, SessionDep
 from app.core.security import get_password_hash, verify_password
 from app.models import (
     Credential,
@@ -16,7 +15,7 @@ from app.models import (
 )
 from app.utils import get_date_timestamp
 from cryptography.fernet import Fernet
-from fastapi import APIRouter, HTTPException
+from fastapi import HTTPException
 from sqlmodel import Session, func, select
 
 
@@ -157,8 +156,8 @@ def create_parameter(
 
 
 def read_parameters(
-    session: SessionDep,
-    current_user: CurrentUser,
+    session,
+    current_user,
     skip: int = 0,
     limit: int = 100,
     with_decryption: bool = False,
@@ -203,8 +202,8 @@ def read_parameters(
 
 def update_parameter(
     *,
-    session: SessionDep,
-    current_user: CurrentUser,
+    session,
+    current_user,
     name: str,
     parameter_in: ParameterUpdate,
     secret_key: str = "TkUTrhRhJ1-PRfIBiOA7OJrcSnxaMugEvdwAnyNXdCM=",
