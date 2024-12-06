@@ -1,18 +1,16 @@
+import os
 from typing import Any
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep
 from app.models import (
     Message,
-    Parameter,
     ParameterCreate,
     ParameterPublic,
     ParametersPublic,
     ParameterUpdate,
 )
-from app.utils import get_date_timestamp
 from fastapi import APIRouter, HTTPException
-from sqlmodel import func, select
 
 router = APIRouter()
 
@@ -23,30 +21,24 @@ def read_parameters(
     current_user: CurrentUser,
     skip: int = 0,
     limit: int = 100,
+    with_decryption: bool = False,
 ) -> Any:
     """
     Retrieve parameters.
     """
 
-    if current_user.is_superuser:
-        count_statement = select(func.count()).select_from(Parameter)
-        count = session.exec(count_statement).one()
-        statement = select(Parameter).offset(skip).limit(limit)
-        parameters = session.exec(statement).all()
-    else:
-        count_statement = (
-            select(func.count())
-            .select_from(Parameter)
-            .where(Parameter.owner_id == current_user.id)
-        )
-        count = session.exec(count_statement).one()
-        statement = (
-            select(Parameter)
-            .where(Parameter.owner_id == current_user.id)
-            .offset(skip)
-            .limit(limit)
-        )
-        parameters = session.exec(statement).all()
+    print("with_decryption", with_decryption)
+
+    parameters, count = crud.read_parameters(
+        session,
+        current_user,
+        skip,
+        limit,
+        with_decryption=with_decryption,
+        secret_key=os.environ.get(
+            "O3SM_SECRET_KEY", "TkUTrhRhJ1-PRfIBiOA7OJrcSnxaMugEvdwAnyNXdCM="
+        ),
+    )
 
     return ParametersPublic(data=parameters, count=count)
 
@@ -56,13 +48,19 @@ def read_parameter(
     session: SessionDep,
     current_user: CurrentUser,
     name: str,
+    with_decryption: bool = False,
 ) -> Any:
     """
     Get parameter by name.
     """
+
     parameter = crud.get_parameter_by_name(
         session=session,
         name=name,
+        secret_key=os.environ.get(
+            "O3SM_SECRET_KEY", "TkUTrhRhJ1-PRfIBiOA7OJrcSnxaMugEvdwAnyNXdCM="
+        ),
+        with_decryption=with_decryption,
     )
     if not parameter:
         raise HTTPException(status_code=404, detail="Parameter not found")
@@ -86,12 +84,14 @@ def create_parameter(
         session=session,
         parameter_in=parameter_in,
         owner=current_user,
+        secret_key=os.environ.get(
+            "O3SM_SECRET_KEY", "TkUTrhRhJ1-PRfIBiOA7OJrcSnxaMugEvdwAnyNXdCM="
+        ),
     )
 
     return parameter
 
 
-# Update is not needed for this project, so we will comment it out
 @router.put("/{name}", response_model=ParameterPublic)
 def update_parameter(
     *,
@@ -103,27 +103,15 @@ def update_parameter(
     """
     Update a parameter.
     """
-    parameter = crud.get_parameter_by_name(
+    parameter = crud.update_parameter(
         session=session,
+        current_user=current_user,
         name=name,
+        parameter_in=parameter_in,
+        O3SM_SECRET_KEY=os.environ.get(
+            "O3SM_SECRET_KEY", "TkUTrhRhJ1-PRfIBiOA7OJrcSnxaMugEvdwAnyNXdCM="
+        ),
     )
-    if not parameter:
-        raise HTTPException(status_code=404, detail="Parameter not found")
-    if not current_user.is_superuser and (parameter.owner_id != current_user.id):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
-    update_dict = parameter_in.model_dump(exclude_unset=True)
-
-    update_dict["LastModifiedDate"] = get_date_timestamp()
-
-    # Make sure we don't update the name or arn as they are unique
-    update_dict.pop("Name", None)
-    update_dict.pop("ARN", None)
-    update_dict["Version"] = parameter.Version + 1
-
-    parameter.sqlmodel_update(update_dict)
-    session.add(parameter)
-    session.commit()
-    session.refresh(parameter)
     return parameter
 
 
@@ -139,6 +127,9 @@ def delete_parameter(
     parameter = crud.get_parameter_by_name(
         session=session,
         name=name,
+        secret_key=os.environ.get(
+            "O3SM_SECRET_KEY", "TkUTrhRhJ1-PRfIBiOA7OJrcSnxaMugEvdwAnyNXdCM="
+        ),
     )
     if not parameter:
         raise HTTPException(status_code=404, detail="Parameter not found")

@@ -113,7 +113,7 @@ const AddItem = ({ isOpen, onClose }: AddParameterProps) => {
                 })}
                 placeholder="Type"
                 type="text"
-                value={"String"}
+                defaultValue={"String"}
               />
             </FormControl>
           </ModalBody>

@@ -1,3 +1,4 @@
+import os
 from typing import Any
 
 from app import crud
@@ -14,6 +15,7 @@ from app.models import (
     AWSParameterPublic,
     AWSParametersPublic,
     Credential,
+    Parameter,
     ParameterCreate,
     ParameterPublic,
     ParametersPublic,
@@ -42,19 +44,35 @@ class AWSRequestsRouter(object):
         body_json: dict = await self.request.json()  # type: ignore
 
         name: str | None = body_json.get("Name")
+        with_decryption: bool = body_json.get("WithDecryption", False)
+
         if not name:
             raise HTTPException(status_code=400, detail="Name is required")
 
-        param: ParameterPublic = read_parameter(
-            self.session, current_user=owner, name=name
+        param: Parameter = crud.get_parameter_by_name(
+            session=self.session,
+            name=name,
+            with_decryption=with_decryption,
+            secret_key=os.environ.get(
+                "O3SM_SECRET_KEY", "TkUTrhRhJ1-PRfIBiOA7OJrcSnxaMugEvdwAnyNXdCM="
+            ),
         )
+
         return AWSParameterPublic(Parameter=param)
 
     async def describe_parameters(self, owner: User) -> Any:
         # body_json: dict = await self.request.json()  # type: ignore
 
-        parameters: ParametersPublic = read_parameters(self.session, current_user=owner)
-        return AWSParametersPublic(Parameters=parameters.data)
+        parameters, _ = crud.read_parameters(
+            session=self.session,
+            current_user=owner,
+            with_decryption=False,
+            secret_key=os.environ.get(
+                "O3SM_SECRET_KEY", "TkUTrhRhJ1-PRfIBiOA7OJrcSnxaMugEvdwAnyNXdCM="
+            ),
+        )
+
+        return AWSParametersPublic(Parameters=parameters)
 
     async def put_parameter(self, owner: User) -> Any:
         body_json: dict = await self.request.json()  # type: ignore
@@ -80,18 +98,24 @@ class AWSRequestsRouter(object):
             update_json.update(body_json)
             parameter_update: ParameterUpdate = ParameterUpdate(**update_json)
 
-            return update_parameter(
+            return crud.update_parameter(
                 session=self.session,
                 current_user=owner,
                 name=name,
                 parameter_in=parameter_update,
+                secret_key=os.environ.get(
+                    "O3SM_SECRET_KEY", "TkUTrhRhJ1-PRfIBiOA7OJrcSnxaMugEvdwAnyNXdCM="
+                ),
             )
         else:
             parameter_create: ParameterCreate = ParameterCreate(**body_json)
-            return create_parameter(
+            return crud.create_parameter(
                 session=self.session,
-                current_user=owner,
                 parameter_in=parameter_create,
+                owner=owner,
+                secret_key=os.environ.get(
+                    "O3SM_SECRET_KEY", "TkUTrhRhJ1-PRfIBiOA7OJrcSnxaMugEvdwAnyNXdCM="
+                ),
             )
 
     async def delete_parameter(self, owner: User) -> Any:

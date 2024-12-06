@@ -544,6 +544,7 @@ export class ParametersService {
       query: {
         skip,
         limit,
+        with_decryption: true,
       },
       errors: {
         422: "Validation Error",
