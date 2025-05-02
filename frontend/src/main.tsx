@@ -5,10 +5,21 @@ import ReactDOM from "react-dom/client"
 import { routeTree } from "./routeTree.gen"
 
 import { StrictMode } from "react"
+import React from "react"
 import { OpenAPI } from "./client"
 import theme from "./theme"
 
-OpenAPI.BASE = import.meta.env.VITE_API_URL
+interface O3SMConfig {
+  VITE_API_URL?: string
+}
+
+declare global {
+  interface Window {
+    O3SM_CONFIG: O3SMConfig
+  }
+}
+
+OpenAPI.BASE = window.O3SM_CONFIG.VITE_API_URL || "http://localhost:8000"
 OpenAPI.TOKEN = async () => {
   return localStorage.getItem("access_token") || ""
 }

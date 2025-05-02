@@ -1,7 +1,6 @@
 import {
   Button,
   FormControl,
-  FormErrorMessage,
   FormLabel,
   Input,
   Modal,
@@ -17,36 +16,36 @@ import { type SubmitHandler, useForm } from "react-hook-form"
 
 import {
   type ApiError,
-  type ItemPublic,
-  type ItemUpdate,
-  ItemsService,
+  type ParameterPublic,
+  type ParameterUpdate,
+  ParametersService,
 } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 import { handleError } from "../../utils"
 
-interface EditItemProps {
-  item: ItemPublic
+interface EditParameterProps {
+  item: ParameterPublic
   isOpen: boolean
   onClose: () => void
 }
 
-const EditItem = ({ item, isOpen, onClose }: EditItemProps) => {
+const EditParameter = ({ item, isOpen, onClose }: EditParameterProps) => {
   const queryClient = useQueryClient()
   const showToast = useCustomToast()
   const {
     register,
     handleSubmit,
     reset,
-    formState: { isSubmitting, errors, isDirty },
-  } = useForm<ItemUpdate>({
+    formState: { isSubmitting, isDirty },
+  } = useForm<ParameterUpdate>({
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: item,
   })
 
   const mutation = useMutation({
-    mutationFn: (data: ItemUpdate) =>
-      ItemsService.updateItem({ id: item.id, requestBody: data }),
+    mutationFn: (data: ParameterUpdate) =>
+      ParametersService.updateParameter({ Name: item.Name, requestBody: data }),
     onSuccess: () => {
       showToast("Success!", "Item updated successfully.", "success")
       onClose()
@@ -55,11 +54,11 @@ const EditItem = ({ item, isOpen, onClose }: EditItemProps) => {
       handleError(err, showToast)
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["items"] })
+      queryClient.invalidateQueries({ queryKey: ["parameters"] })
     },
   })
 
-  const onSubmit: SubmitHandler<ItemUpdate> = async (data) => {
+  const onSubmit: SubmitHandler<ParameterUpdate> = async (data) => {
     mutation.mutate(data)
   }
 
@@ -81,25 +80,12 @@ const EditItem = ({ item, isOpen, onClose }: EditItemProps) => {
           <ModalHeader>Edit Item</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
-            <FormControl isInvalid={!!errors.title}>
-              <FormLabel htmlFor="title">Title</FormLabel>
+            <FormControl isRequired mt={4}>
+              <FormLabel htmlFor="value">Value</FormLabel>
               <Input
-                id="title"
-                {...register("title", {
-                  required: "Title is required",
-                })}
-                type="text"
-              />
-              {errors.title && (
-                <FormErrorMessage>{errors.title.message}</FormErrorMessage>
-              )}
-            </FormControl>
-            <FormControl mt={4}>
-              <FormLabel htmlFor="description">Description</FormLabel>
-              <Input
-                id="description"
-                {...register("description")}
-                placeholder="Description"
+                id="value"
+                {...register("Value")}
+                placeholder="Value"
                 type="text"
               />
             </FormControl>
@@ -121,4 +107,4 @@ const EditItem = ({ item, isOpen, onClose }: EditItemProps) => {
   )
 }
 
-export default EditItem
+export default EditParameter

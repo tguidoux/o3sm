@@ -1,3 +1,4 @@
+import time
 import uuid
 
 from pydantic import EmailStr
@@ -43,7 +44,12 @@ class UpdatePassword(SQLModel):
 class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
-    items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)
+    credentials: list["Credential"] = Relationship(
+        back_populates="owner", cascade_delete=True
+    )
+    parameters: list["Parameter"] = Relationship(
+        back_populates="owner", cascade_delete=True
+    )
 
 
 # Properties to return via API, id is always required
@@ -57,40 +63,113 @@ class UsersPublic(SQLModel):
 
 
 # Shared properties
-class ItemBase(SQLModel):
-    title: str = Field(min_length=1, max_length=255)
-    description: str | None = Field(default=None, max_length=255)
+class CredentialBase(SQLModel):
+    access_key: str = Field(max_length=255, index=True)
+    secret_key: str = Field(max_length=255)
 
 
-# Properties to receive on item creation
-class ItemCreate(ItemBase):
+# Properties to receive on Credential creation
+class CredentialCreate(SQLModel):
     pass
 
 
-# Properties to receive on item update
-class ItemUpdate(ItemBase):
-    title: str | None = Field(default=None, min_length=1, max_length=255)  # type: ignore
+# Properties to receive on Credential update
+# Cannot be updated
+class CredentialUpdate(CredentialBase):
+    pass
 
 
 # Database model, database table inferred from class name
-class Item(ItemBase, table=True):
+class Credential(CredentialBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    title: str = Field(max_length=255)
     owner_id: uuid.UUID = Field(
         foreign_key="user.id", nullable=False, ondelete="CASCADE"
     )
-    owner: User | None = Relationship(back_populates="items")
+    owner: User | None = Relationship(back_populates="credentials")
 
 
 # Properties to return via API, id is always required
-class ItemPublic(ItemBase):
+class CredentialPublic(SQLModel):
     id: uuid.UUID
     owner_id: uuid.UUID
+    access_key: str
 
 
-class ItemsPublic(SQLModel):
-    data: list[ItemPublic]
+class CredentialPrivate(CredentialBase):
+    id: uuid.UUID
+    owner_id: uuid.UUID
+    access_key: str
+    secret_key: str
+
+
+class CredentialsPublic(SQLModel):
+    data: list[CredentialPublic]
     count: int
+
+
+# These are CamelCase because they are used in the AWS API
+# Objective is to return the same format as AWS API
+# {
+#     "Parameter": {
+#         "Name": "mobileapp.ios.fastlane.app.specific.password",
+#         "Type": "String",
+#         "Value": "jzaj-ecyd-xwel-ztca",
+#         "Version": 1,
+#         "LastModifiedDate": "2023-12-05T22:08:01.300000+01:00",
+#         "ARN": "arn:aws:ssm:eu-west-3:948781052762:parameter/mobileapp.ios.fastlane.app.specific.password",
+#         "DataType": "text"
+#     }
+# }
+class ParameterBase(SQLModel):
+    Name: str = Field(
+        max_length=255,
+        index=True,
+        unique=True,
+        primary_key=True,
+        nullable=False,
+    )
+    Value: str = Field(max_length=255, nullable=False)
+    Type: str = Field(max_length=255, default="string")
+    Version: int = Field(default=1)
+    DataType: str = Field(max_length=255, default="text")
+    ARN: str = Field(nullable=False, default="")
+
+
+class ParameterCreate(ParameterBase):
+    pass
+
+
+class ParameterUpdate(ParameterBase):
+    Value: str
+    Type: str
+    DataType: str
+
+
+class Parameter(ParameterBase, table=True):
+    LastModifiedDate: int = Field(default=time.time())
+    owner_id: uuid.UUID = Field(
+        foreign_key="user.id",
+        nullable=False,
+        ondelete="CASCADE",
+    )
+    owner: User | None = Relationship(back_populates="parameters")
+
+
+class ParameterPublic(ParameterBase):
+    LastModifiedDate: int
+
+
+class ParametersPublic(SQLModel):
+    data: list[ParameterPublic]
+    count: int
+
+
+class AWSParameterPublic(SQLModel):
+    Parameter: ParameterPublic
+
+
+class AWSParametersPublic(SQLModel):
+    Parameters: list[ParameterPublic]
 
 
 # Generic message

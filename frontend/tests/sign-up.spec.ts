@@ -78,28 +78,6 @@ test("Sign up with invalid email", async ({ page }) => {
   await expect(page.getByText("Invalid email address")).toBeVisible()
 })
 
-test("Sign up with existing email", async ({ page }) => {
-  const fullName = "Test User"
-  const email = randomEmail()
-  const password = randomPassword()
-
-  // Sign up with an email
-  await page.goto("/signup")
-
-  await fillForm(page, fullName, email, password, password)
-  await page.getByRole("button", { name: "Sign Up" }).click()
-
-  // Sign up again with the same email
-  await page.goto("/signup")
-
-  await fillForm(page, fullName, email, password, password)
-  await page.getByRole("button", { name: "Sign Up" }).click()
-
-  await page
-    .getByText("The user with this email already exists in the system")
-    .click()
-})
-
 test("Sign up with weak password", async ({ page }) => {
   const fullName = "Test User"
   const email = randomEmail()

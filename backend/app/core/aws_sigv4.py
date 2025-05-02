@@ -1,0 +1,1061 @@
+"""
+SigV4 authentication routines.
+from: https://github.com/dacut/python-aws-sig/blob/master/awssig/sigv4.py
+"""
+
+import hmac
+from collections import OrderedDict
+from datetime import datetime, timedelta
+from hashlib import sha256
+from logging import getLogger
+from os.path import basename
+from os.path import split as path_split
+from os.path import splitext
+from re import compile as re_compile
+from string import ascii_letters, digits
+from traceback import extract_stack
+from typing import Any
+from warnings import warn
+
+from pytz import UTC, FixedOffset
+from six import (
+    BytesIO,
+    binary_type,
+    indexbytes,
+    int2byte,
+    iterbytes,
+    iteritems,
+    iterkeys,
+    string_types,
+)
+from six.moves.urllib.parse import unquote as url_unquote  # pylint: disable=E0401
+
+
+class InvalidSignatureError(Exception):
+    """
+    An exception indicating that the signature on the request was invalid.
+    """
+
+    pass
+
+
+# pylint: disable=C0103
+
+# Algorithm for AWS SigV4
+AWS4_HMAC_SHA256 = "AWS4-HMAC-SHA256"
+
+# Unreserved bytes from RFC 3986.
+_rfc3986_unreserved = set(iterbytes((ascii_letters + digits + "-._~").encode("utf-8")))
+
+# ASCII code for '%'
+_ascii_percent = ord(b"%")
+
+# ASCII code for '+'
+_ascii_plus = ord(b"+")
+
+# Header and query string keys
+_application_x_www_form_urlencoded = "application/x-www-form-urlencoded"
+_authorization = "authorization"
+_aws4_request = "aws4_request"
+_aws4_request_bytes = _aws4_request.encode("utf-8")
+_charset = "charset"
+_content_type = "content-type"
+_credential = "Credential"
+_date = "date"
+_signature = "Signature"
+_signedheaders = "SignedHeaders"
+_streaming_aws4_hmac_sha256_payload = "STREAMING-AWS4-HMAC-SHA256-PAYLOAD"
+_unsigned_payload = "UNSIGNED-PAYLOAD"
+_x_amz_algorithm = "X-Amz-Algorithm"
+_x_amz_content_sha256 = "x-amz-content-sha256"
+_x_amz_credential = "X-Amz-Credential"
+_x_amz_date = "X-Amz-Date"
+_x_amz_date_lower = "x-amz-date"
+_x_amz_security_token = "X-Amz-Security-Token"
+_x_amz_security_token_lower = "x-amz-security-token"
+_x_amz_signature = "X-Amz-Signature"
+_x_amz_signedheaders = "X-Amz-SignedHeaders"
+
+# SHA-256 hex-digest regex
+_sha256_regex = re_compile(r"^[0-9a-f]{64}$")
+
+# SHA-256 digest of an empty string
+_sha256_empty_digest = (
+    "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+)
+
+# Match for multiple slashes
+_multislash = re_compile(r"//+")
+
+# Match for multiple spaces
+_multispace = re_compile(r"  +")
+
+# Logging instance
+log = getLogger("awssig.sigv4")
+
+
+class AWSSigV4Verifier:
+    # pylint: disable=R0902,R0904
+    """
+    Verify that a query matches the expectations of AWS SigV4.
+    """
+
+    def __init__(self, **kw: Any) -> None:
+        """
+        AWSSigV4Verifier(
+            request_method: str,
+            uri_path: str,
+            query_string: str,
+            headers: Dict[str, Iterable[str]],
+            body: bytes,
+            region: str,
+            service: str,
+            key_mapping: Callable[[str, Optional[str]], Optional[str]],
+            timestamp_mismatch: int=60)
+
+        Create a new AWSSigV4Verifier instance. Properties can be specified
+        as keyword arguments.
+
+        request_method: The HTTP request method (GET, PUT, POST, etc.).
+        uri_path: The path accessed (usually just "/").
+        query_string: The query string portion of the URI.
+        headers: A dictionary mapping HTTP headers to their values.
+        body: The request body (if any). This should be undecoded (bytes, not
+            a Unicode str)
+        region: The AWS region (or pseudo-region) the service is running in.
+        service: The name of the service being authorized against.
+        kep_mapping: A callable object that will be invoked to return a
+            secret key. This will be invoked with one or two arguments.
+
+            If only an access key is specified, it will be invoked as:
+                key_mapping(aws_access_key_id=access_key)
+
+            If an access key and token are specified, it will be invoked as:
+                key_mapping(aws_access_key_id=access_key,
+                            aws_session_token=token)
+
+            The return value is either a string specifying the corresponding
+            secret key or None to indicate the access key is invalid.
+        """
+        super().__init__()
+        self._request_method: str = "GET"
+        self._uri_path: str = "/"
+        self._query_string: str = ""
+        self._body: bytes = b""
+        self._region: str = ""
+        self._service: str = ""
+        self._key_mapping = lambda *args: None
+        self._headers: dict[str, list[str]] = {}
+        self._timestamp_mismatch = 60
+
+        for key, value in kw.items():
+            setattr(self, key, value)
+        return
+
+    @property
+    def request_method(self) -> str:
+        """
+        The HTTP method (GET, POST, PUT) used to make the request.
+        """
+        return self._request_method
+
+    @request_method.setter
+    def request_method(self, value) -> None:  # type: ignore
+        if not isinstance(value, string_types):
+            raise TypeError("Expected request_method to be a string.")
+
+        self._request_method = value
+        return
+
+    @property
+    def uri_path(self) -> str:
+        """
+        The path component of the URI.
+        """
+        return self._uri_path
+
+    @uri_path.setter
+    def uri_path(self, value) -> None:  # type: ignore
+        if not isinstance(value, string_types):
+            raise TypeError("Expected uri_path to be a string.")
+
+        self._uri_path = value
+        return
+
+    @property
+    def query_string(self) -> str:
+        """
+        The query string portion of the URI.
+        """
+        return self._query_string
+
+    @query_string.setter
+    def query_string(self, value) -> None:  # type: ignore
+        if not isinstance(value, string_types):
+            raise TypeError("Expected query_string to be a string.")
+
+        self._query_string = value
+        return
+
+    @property
+    def body(self) -> binary_type:
+        """
+        The body sent with the HTTP request (for PUT and POST requests).
+        """
+        return self._body
+
+    @body.setter
+    def body(self, value) -> None:  # type: ignore
+        if not isinstance(value, binary_type):
+            raise TypeError("Expected body to be a byte array.")
+
+        self._body = value
+        return
+
+    @property
+    def region(self) -> str:
+        """
+        The region the service is running in.
+        """
+        return self._region
+
+    @region.setter
+    def region(self, value) -> None:  # type: ignore
+        if not isinstance(value, string_types):
+            raise TypeError("Expected region to be a string.")
+
+        self._region = value
+        return
+
+    @property
+    def service(self) -> str:
+        """
+        The name of the service being invoked.
+        """
+        return self._service
+
+    @service.setter
+    def service(self, value) -> None:  # type: ignore
+        if not isinstance(value, string_types):
+            raise TypeError("Expected service to be a string.")
+
+        self._service = value
+        return
+
+    @property
+    def key_mapping(self) -> Any:
+        """
+        A function that converts an AWS access key and, optionally, an AWS
+        token, and returns the corresponding secret key (or None if the
+        access key or token are invalid).
+        """
+        return self._key_mapping
+
+    @key_mapping.setter
+    def key_mapping(self, value) -> None:  # type: ignore
+        self._key_mapping = value
+        return
+
+    @property
+    def headers(self) -> dict[str, list[str]]:
+        """
+        The HTTP headers sent with the request
+        """
+        return self._headers
+
+    @headers.setter
+    def headers(self, value) -> None:  # type: ignore
+        if not isinstance(value, dict):
+            raise TypeError("Expected headers to be a dict.")
+
+        new_headers = {}
+
+        for key, header_values in iteritems(value):
+            if not isinstance(key, string_types):
+                raise TypeError(f"Header must be a string: {key!r}")
+
+            if isinstance(header_values, string_types):
+                depth = _get_callee_depth()
+
+                warn(
+                    f"Header {key} value must be an iterable of strings: {type(header_values).__name__}",
+                    category=DeprecationWarning,
+                    stacklevel=depth,
+                )
+                new_headers[key] = [header_values]
+            else:
+                values = []
+                try:
+                    hv_iter = iter(header_values)
+                except TypeError:
+                    raise TypeError(
+                        f"Header {key} value must be an iterable of strings: {type(header_values).__name__}",
+                    )
+                for i, el in enumerate(hv_iter):
+                    if not isinstance(el, string_types):
+                        raise TypeError(
+                            f"Header {key} value {i} must be a string: {type(el).__name__}"
+                        )
+                    values.append(el)
+                new_headers[key] = values
+
+        self._headers = new_headers
+
+    @property
+    def content_type(self) -> tuple[str, str] | None:
+        """
+        A 2-tuple containing the content type and charset of the request body,
+        or None if the content type was not specified.
+        """
+        content_type_values = self.headers.get(_content_type)
+        if not content_type_values:
+            return None
+
+        if len(content_type_values) > 1:
+            raise ValueError("Multiple values for Content-Type header")
+
+        parts = content_type_values[0].split(";")
+        content_type = parts[0]
+
+        for param_str in parts[1:]:
+            param_str = param_str.strip()
+            param_parts = param_str.split("=", 1)
+            if not (param_parts) or len(param_parts) < 2:
+                continue
+
+            param_name = param_parts[0].lower()
+            if param_name == _charset:
+                charset = param_parts[1]
+                break
+        else:
+            charset = "utf-8"
+
+        return content_type, charset
+
+    @property
+    def timestamp_mismatch(self) -> int:
+        """
+        The allowable mismatch in the timestamp, in seconds.
+        """
+        return self._timestamp_mismatch
+
+    @timestamp_mismatch.setter
+    def timestamp_mismatch(self, value) -> None:  # type: ignore
+        if value is not None:
+            if not isinstance(value, int | float):
+                raise TypeError("Expected timestamp_mismatch to be a number.")
+
+            if value < 0:
+                raise ValueError("timestamp_mismatch cannot be negative.")
+
+        self._timestamp_mismatch = value
+
+    @property
+    def canonical_uri_path(self) -> str:
+        """
+        The canonicalized URI path from the request.
+        """
+        return get_canonical_uri_path(self.uri_path)
+
+    @property
+    def query_parameters(self) -> dict[str, list[str]]:
+        """
+        A key to list of values mapping of the query parameters seen in the
+        request.
+        """
+        return normalize_query_parameters(self.query_string)
+
+    @property
+    def canonical_query_string(self) -> str:
+        """
+        The canonical query string from the query parameters.
+
+        This takes the query string from the request and orders the parameters
+        into a string. If the body is of type application/x-www-form-urlencoded,
+        it is included as part of the content string.
+        """
+        results = []
+        for key, values in iteritems(self.query_parameters):
+            # Don't include the signature itself.
+            if key == _x_amz_signature:
+                continue
+
+            for value in values:
+                results.append(f"{key}={value}")
+
+        ct_info = self.content_type
+        if ct_info and ct_info[0] == _application_x_www_form_urlencoded:
+            # Body is a form; include its parts in our result
+            charset = ct_info[1]
+            for key, values in iteritems(
+                normalize_query_parameters(self.body.decode(charset))
+            ):
+                for value in values:
+                    results.append(f"{key}={value}")
+
+        return "&".join(sorted(results))
+
+    @property
+    def authorization_header_parameters(self) -> dict[str, str]:
+        """
+        The parameters from the Authorization header (only).  If the
+        Authorization header is not present or is not an AWS SigV4 header, an
+        AttributeError exception is raised.
+        """
+        auth_values = self.headers.get(_authorization)
+        if auth_values is None:
+            raise AttributeError("Authorization header is not present")
+
+        if len(auth_values) > 1:
+            raise ValueError("Multiple Authorization headers present")
+
+        auth = auth_values[0]
+
+        if not auth.startswith(AWS4_HMAC_SHA256 + " "):
+            raise AttributeError("Authorization header is not AWS SigV4")
+
+        result = {}
+        for parameter in auth[len(AWS4_HMAC_SHA256) + 1 :].split(","):
+            parameter = parameter.strip()
+            try:
+                key, value = parameter.split("=", 1)
+            except ValueError:
+                raise AttributeError(f"Invalid Authorization header: {parameter}")
+
+            if key in result:
+                raise AttributeError(
+                    f"Invalid Authorization header: duplicate key {key!r}"
+                )
+
+            result[key] = value
+        return result
+
+    @property
+    def signed_headers(self) -> OrderedDict[str, str]:
+        """
+        An ordered dictionary containing the signed header names and values.
+        """
+        # See if the signed headers are listed in the query string
+        signed_headers: list[str] | str | None = self.query_parameters.get(
+            _x_amz_signedheaders
+        )
+        if signed_headers is not None:
+            signed_headers = url_unquote(signed_headers[0])
+        else:
+            # Get this from the authentication header
+            signed_headers = self.authorization_header_parameters[_signedheaders]
+
+        # Header names are separated by semicolons.
+        parts = signed_headers.split(";")
+
+        # Make sure the signed headers list is canonicalized.  For security
+        # reasons, we consider it an error if it isn't.
+        canonicalized = sorted([sh.lower() for sh in parts])
+        if parts != canonicalized:
+            raise AttributeError(
+                f"SignedHeaders is not canonicalized: {signed_headers}"
+            )
+
+        # Allow iteration in-order. Replace multiple spaces in header values
+        # with single spaces.
+        return OrderedDict(
+            [
+                (
+                    header,
+                    ",".join([_multispace.sub(" ", v) for v in self.headers[header]]),
+                )
+                for header in signed_headers.split(";")
+            ]
+        )
+
+    @property
+    def request_date_utc(self) -> str:
+        """
+        The UTC date of the request in ISO8601 YYYYMMDD format.
+
+        If this is not available in the query parameters or headers, or the
+        value is not a valid format for AWS SigV4, an AttributeError exception
+        is raised.
+        """
+        return self.request_timestamp.astimezone(UTC).strftime("%Y%m%d")
+
+    @property
+    def request_timestamp(self) -> datetime:
+        """
+        The timestamp of the request as a Timestamp.
+
+        If this is not available in the query parameters or headers, or the
+        value is not a valid format for AWS SigV4, an AttributeError exception
+        is raised.
+        """
+        amz_date_values: list[str] | str | None = self.query_parameters.get(_x_amz_date)
+        if amz_date_values is not None:
+            if len(amz_date_values) > 1:
+                raise ValueError("Multiple X-Amz-Date query parameters present")
+        else:
+            amz_date_values = self.headers.get(_x_amz_date_lower)
+            if amz_date_values is not None:
+                if len(amz_date_values) > 1:
+                    raise ValueError("Multiple X-Amz-Date header values present")
+            else:
+                amz_date_values = self.headers.get(_date)
+                if amz_date_values is None:
+                    raise AttributeError("Date was not passed in the request")
+                elif len(amz_date_values) > 1:
+                    raise ValueError("Multiple Date header values present")
+
+        date_str = amz_date_values[0]
+        date = parse_iso8601(date_str)
+        if not date:
+            date = parse_rfc2282(date_str)
+        if not date:
+            raise AttributeError(
+                f"Date is not a valid ISO 8601 or RFC 2282 string: {date_str}"
+            )
+
+        return date
+
+    @property
+    def credential_scope(self) -> str:
+        """
+        The scope of the credentials to use.
+        """
+        return (
+            self.request_date_utc
+            + "/"
+            + self.region
+            + "/"
+            + self.service
+            + "/"
+            + _aws4_request
+        )
+
+    @property
+    def access_key(self) -> str:
+        """
+        The access key id used to sign the request.
+
+        If the access key is not in the same credential scope as this request,
+        an AttributeError exception is raised.
+        """
+        credential: list[str] | str | None = self.query_parameters.get(
+            _x_amz_credential
+        )
+        if credential is not None:
+            credential = url_unquote(credential[0])
+        else:
+            credential = self.authorization_header_parameters.get(_credential)
+
+            if credential is None:
+                raise AttributeError("Credential was not passed in the request")
+        try:
+            key, scope = credential.split("/", 1)
+        except ValueError:
+            raise AttributeError(f"Invalid request credential: {credential}")
+
+        if scope != self.credential_scope:
+            raise AttributeError(
+                f"Incorrect credential scope: {scope} (wanted {self.credential_scope})"
+            )
+
+        return key
+
+    @property
+    def session_token(self) -> str | None:
+        """
+        The session token passed with the request, or None if a session token
+        was not specified.
+        """
+        session_token_values: list[str] | str | None = self.query_parameters.get(
+            _x_amz_security_token
+        )
+        if session_token_values:
+            if len(session_token_values) > 1:
+                raise ValueError(
+                    "Multiple X-Amz-Security-Token query parameters provided"
+                )
+            return session_token_values[0]
+        else:
+            session_token_values = self.headers.get(_x_amz_security_token_lower)
+            if not session_token_values:
+                return None
+            if len(session_token_values) > 1:
+                raise ValueError("Multiple X-Amz-Security-Token headers provided")
+
+            return session_token_values[0]
+
+    @property
+    def request_signature(self) -> str:
+        """
+        The signature passed in the request.
+        """
+        signature: list[str] | None = self.query_parameters.get(_x_amz_signature)
+        if signature:
+            return signature[0]
+
+        else:
+            _signature_: str | None = self.authorization_header_parameters.get(
+                _signature
+            )
+            if not _signature_:
+                raise AttributeError("Signature was not passed in the request")
+
+            return _signature_
+
+    @property
+    def canonical_request(self) -> str:
+        """
+        The AWS SigV4 canonical request given parameters from an HTTP request.
+        This process is outlined here:
+        http://docs.aws.amazon.com/general/latest/gr/sigv4-create-canonical-request.html
+
+        The canonical request is:
+            request_method + '\n' +
+            canonical_uri_path + '\n' +
+            canonical_query_string + '\n' +
+            signed_headers + '\n' +
+            sha256(body).hexdigest()
+        """
+        signed_headers = self.signed_headers
+        # header_lines = "".join("%s:%s\n" % item for item in iteritems(signed_headers))
+        # Use format specifiers instead of percent format
+        header_lines = "".join(
+            f"{key}:{value}\n" for key, value in iteritems(signed_headers)
+        )
+
+        header_keys = ";".join(key for key in iterkeys(self.signed_headers))
+
+        ct_info = self.content_type
+        if ct_info and ct_info[0] == _application_x_www_form_urlencoded:
+            body_digest = _sha256_empty_digest
+        else:
+            body_digest = sha256(self.body).hexdigest()
+
+        return (
+            self.request_method
+            + "\n"
+            + self.canonical_uri_path
+            + "\n"
+            + self.canonical_query_string
+            + "\n"
+            + header_lines
+            + "\n"
+            + header_keys
+            + "\n"
+            + body_digest
+        )
+
+    @property
+    def string_to_sign(self) -> str:
+        """
+        The AWS SigV4 string being signed.
+        """
+        timestamp_str = self.request_timestamp.astimezone(UTC).strftime(
+            "%Y%m%dT%H%M%SZ"
+        )
+
+        return (
+            AWS4_HMAC_SHA256
+            + "\n"
+            + timestamp_str
+            + "\n"
+            + self.credential_scope
+            + "\n"
+            + sha256(self.canonical_request.encode("utf-8")).hexdigest()
+        )
+
+    @property
+    def expected_signature(self) -> str:
+        """
+        The AWS SigV4 signature expected from the request.
+        """
+        session_token = self.session_token
+        try:
+            if session_token:
+                secret_key = self.key_mapping(self.access_key, session_token)
+            else:
+                secret_key = self.key_mapping(self.access_key)
+        except TypeError as e:
+            if "is not callable" not in str(e):
+                raise
+
+            # Old docs specify that we call this using __getitem__ (sigh)
+            if session_token:
+                secret_key = self.key_mapping[(self.access_key, session_token)]
+            else:
+                secret_key = self.key_mapping[self.access_key]
+
+            warn(
+                "key_mapping needs to be updated to be a callable object",
+                DeprecationWarning,
+                stacklevel=_get_callee_depth(),
+            )
+
+        k_secret = b"AWS4" + secret_key.encode("utf-8")
+        k_date = hmac.new(
+            k_secret, self.request_date_utc.encode("utf-8"), sha256
+        ).digest()
+        k_region = hmac.new(k_date, self.region.encode("utf-8"), sha256).digest()
+        k_service = hmac.new(k_region, self.service.encode("utf-8"), sha256).digest()
+        k_signing = hmac.new(k_service, _aws4_request_bytes, sha256).digest()
+
+        return hmac.new(
+            k_signing, self.string_to_sign.encode("utf-8"), sha256
+        ).hexdigest()
+
+    def verify(self) -> bool:
+        """
+        Verifies that the request timestamp is not beyond our allowable
+        timestamp mismatch and that the request signature matches our
+        expectations.
+        """
+        try:
+            if self.timestamp_mismatch is not None:
+                req_ts = self.request_timestamp.astimezone(UTC)
+                mm_td = timedelta(seconds=self.timestamp_mismatch)
+                now = datetime.now(UTC)
+                min_ts = now - mm_td
+                max_ts = now + mm_td
+
+                if not (min_ts <= req_ts <= max_ts):
+                    raise InvalidSignatureError(
+                        f"Timestamp mismatch: request timestamp {req_ts} outside of "
+                        f"allowed range {min_ts} to {max_ts}"
+                    )
+
+            if self.expected_signature != self.request_signature:
+                raise InvalidSignatureError(
+                    f"Signature mismatch: expected {self.expected_signature}, got {self.request_signature}"
+                )
+        except (AttributeError, KeyError, ValueError) as e:
+            raise InvalidSignatureError(str(e))
+
+        return True
+
+
+def normalize_uri_path_component(path_component) -> str:  # type: ignore
+    """
+    normalize_uri_path_component(path_component) -> str
+
+    Normalize the path component according to RFC 3986.  This performs the
+    following operations:
+    * Alpha, digit, and the symbols '-', '.', '_', and '~' (unreserved
+      characters) are left alone.
+    * Characters outside this range are percent-encoded.
+    * Percent-encoded values are upper-cased ('%2a' becomes '%2A')
+    * Percent-encoded values in the unreserved space (%41-%5A, %61-%7A,
+      %30-%39, %2D, %2E, %5F, %7E) are converted to normal characters.
+
+    If a percent encoding is incomplete, the percent is encoded as %25.
+
+    A ValueError exception is thrown if a percent encoding includes non-hex
+    characters (e.g. %3z).
+    """
+    result = BytesIO()
+
+    i = 0
+    path_component = path_component.encode("utf-8")
+    while i < len(path_component):
+        c = indexbytes(path_component, i)
+        if c in _rfc3986_unreserved:
+            result.write(int2byte(c))
+            i += 1
+        elif c == _ascii_percent:  # percent, '%', 0x25, 37
+            if i + 2 >= len(path_component):
+                result.write(b"%25")
+                i += 1
+                continue
+            try:
+                value = int(path_component[i + 1 : i + 3], 16)
+            except ValueError:
+                raise ValueError("Invalid %% encoding at position %d" % i)
+
+            if value in _rfc3986_unreserved:
+                result.write(int2byte(value))
+            else:
+                # result.write(("%%%02X" % value).encode("ascii"))
+                result.write(f"%{value:02X}".encode("ascii"))
+
+            i += 3
+        elif c == _ascii_plus:
+            # Plus-encoded space.  Convert this to %20.
+            result.write(b"%20")
+            i += 1
+        else:
+            # result.write(("%%%02X" % c).encode("ascii"))
+            result.write(f"%{c:02X}".encode("ascii"))
+            i += 1
+
+    result = result.getvalue()  # type: ignore
+    if not isinstance(result, string_types):
+        result = result.decode("utf-8")  # type: ignore
+    return result  # type: ignore
+
+
+def get_canonical_uri_path(uri_path: str) -> str:
+    """
+    get_canonical_uri_path(uri_path) -> str
+
+    Normalizes the specified URI path component, removing redundant slashes
+    and relative path components.
+
+    A ValueError exception is raised if:
+    * The URI path is not empty and not absolute (does not start with '/').
+    * A parent relative path element ('..') attempts to go beyond the top.
+    * An invalid percent-encoding is encountered.
+    """
+    # Special case: empty path is converted to '/'
+    if uri_path == "" or uri_path == "/":
+        return "/"
+
+    # All other paths must be absolute.
+    if not uri_path.startswith("/"):
+        raise ValueError("URI path is not absolute.")
+
+    # Replace double slashes; this makes it easier to handle slashes at the
+    # end.
+    uri_path = _multislash.sub("/", uri_path)
+
+    # Examine each path component for relative directories.
+    components = uri_path.split("/")[1:]
+    i = 0
+    while i < len(components):
+        # Fix % encodings.
+        component = normalize_uri_path_component(components[i])
+        components[i] = component
+
+        if components[i] == ".":
+            # Relative current directory.  Remove this.
+            del components[i]
+
+            # Don't increment i; with the deletion, we're now pointing to
+            # the next element in the path.
+        elif components[i] == "..":
+            # Relative path: parent directory.  Remove this and the previous
+            # component.
+            if i == 0:
+                # Not allowed at the beginning!
+                raise ValueError("URI path attempts to go beyond root")
+            del components[i - 1 : i + 1]
+
+            # Since we've deleted two components, we need to back up one to
+            # examine what's now the next component.
+            i -= 1
+        else:
+            # Leave it alone; proceed to the next component.
+            i += 1
+
+    return "/" + "/".join(components)
+
+
+def normalize_query_parameters(query_string: str) -> dict[str, list[str]]:
+    """
+    normalize_query_parameters(query_string) -> dict
+
+    Converts a query string into a dictionary mapping parameter names to a
+    list of the sorted values.  This ensurses that the query string follows
+    % encoding rules according to RFC 3986 and checks for duplicate keys.
+
+    A ValueError exception is raised if a percent encoding is invalid.
+    """
+    if query_string == "":
+        return {}
+
+    components = query_string.split("&")
+    result: dict[str, list[str]] = {}
+
+    for component in components:
+        try:
+            key, value = component.split("=", 1)
+        except ValueError:
+            key = component
+            value = ""
+
+        if component == "":
+            # Empty component; skip it.
+            continue
+
+        key = normalize_uri_path_component(key)
+        value = normalize_uri_path_component(value)
+
+        if key in result:
+            result[key].append(value)
+        else:
+            result[key] = [value]
+
+    return {key: sorted(values) for key, values in iteritems(result)}
+
+
+def _get_callee_depth() -> int:
+    # for depth, stack_segment in enumerate(reversed(extract_stack())):
+    #    log.warning("DEPTH=%2d SS=%s", depth, stack_segment)
+
+    for depth, stack_segment in enumerate(reversed(extract_stack())):
+        filename = stack_segment.filename
+        if not filename:
+            return depth
+
+        path_parts = path_split(filename)[-2:]
+        if (
+            len(path_parts) != 2
+            or basename(path_parts[0]) != "awssig"
+            or splitext(path_parts[1])[0] != "sigv4"
+        ):
+            return depth
+
+    return depth
+
+
+# Month-name to month-value map
+_month_names = {
+    "Jan": 1,
+    "Feb": 2,
+    "Mar": 3,
+    "Apr": 4,
+    "May": 5,
+    "Jun": 6,
+    "Jul": 7,
+    "Aug": 8,
+    "Sep": 9,
+    "Oct": 10,
+    "Nov": 11,
+    "Dec": 12,
+}
+
+# ISO 8601 timestamp format regex (includes RFC 3339)
+_iso_8601_regex = re_compile(
+    r"^(?P<year>[0-9]{4})-?"
+    r"(?P<month>0[1-9]|1[0-2])-?"
+    r"(?P<day>0[1-9]|[12][0-9]|3[01])"
+    r"[Tt ]"
+    r"(?P<hour>[01][0-9]|2[0-3]):?"
+    r"(?P<minute>[0-5][0-9]):?"
+    r"(?P<second>[0-5][0-9]|6[01])"
+    r"(?P<frac_sec>[\.,][0-9]+)?"
+    r"(?P<timezone>[-+][01][0-9]:?[0-5][0-9]|[Zz])$"
+)
+
+# RFC 2282 timestamp format regex
+_rfc_2282_regex = re_compile(
+    r"^(?:(?P<dow>Mon|Tue|Wed|Thu|Fri|Sate|Sun)\s*,)?\s*"
+    r"(?P<day>[0-9]|0[1-9]|1[0-9]|2[0-9]|3[01])\s+"
+    r"(?P<month>Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+"
+    r"(?P<year>[0-9]{4})\s+"
+    r"(?P<hour>[01][0-9]|2[0-3]):"
+    r"(?P<minute>[0-5][0-9]):"
+    r"(?P<second>[0-5][0-9]|6[01])\s+"
+    r"(?P<timezone>[-+][01][0-9][0-5][0-9])$"
+)
+
+
+def parse_iso8601(s: str) -> datetime | None:
+    """
+    Parse a timestamp formatted in ISO 8601 timestamp format and return a
+    Timestamp object. If the string is not a valid ISO 8601 timestmap, None
+    is returned.
+
+    ISO 8601 timestamps include the forms:
+        2018-12-25T14:00:00-08:00
+        20181225T140000-0800            (Condensed)
+        20181225T230000+0100            (Timestamp sign *must* be present)
+        2018-12-25T22:00:00Z            (Z == +0000, UTC)
+        20181225T220000Z                (Condensed)
+        20181225 220000Z                (Space instead of T)
+
+    Condensing of dates and times/zone offsets may be mixed, and case of
+    'T' and 'Z' is insignficant:
+        2018-12-25 220000z
+        20181225t14:00:00-08:00
+    etc.
+
+    If fractional seconds are included, they are ignored.
+    """
+    m = _iso_8601_regex.match(s)
+    if not m:
+        return None
+
+    zone = m.group("timezone")
+    if zone in ("Z", "z"):
+        offset = UTC
+    else:
+        zone = zone.replace(":", "")
+        assert len(zone) == 5
+        sign = zone[0]
+        offset_hour = int(zone[1:3])
+        offset_minutes = offset_hour * 60 + int(zone[3:5])
+
+        if sign == "-":
+            offset_minutes = -offset_minutes
+
+        offset = FixedOffset(offset_minutes)  # type: ignore
+
+    return datetime(
+        year=int(m.group("year")),
+        month=int(m.group("month")),
+        day=int(m.group("day")),
+        hour=int(m.group("hour")),
+        minute=int(m.group("minute")),
+        second=int(m.group("second")),
+        tzinfo=offset,
+    )
+
+
+def parse_rfc2282(s: str) -> datetime | None:
+    """
+    Parse a timestamp formatted in RFC 2282 timestamp format and return a
+    Timestamp object. If the string is not a valid RFC 2282 timestmap, None
+    is returned.
+
+    RFC 2282 timestamps are of the form:
+        Tue, 25 Dec 2018 14:00:00 -0800
+        25 Dec 2018 14:00:00 -0800
+    """
+    m = _rfc_2282_regex.match(s)
+    if not m:
+        return None
+
+    month = _month_names[m]  # type: ignore
+    zone = m.group("timezone")
+    assert len(zone) == 5
+    sign = zone[0]
+    offset_hour = int(zone[1:3])
+    offset_minutes = offset_hour * 60 + int(zone[3:5])
+
+    if sign == "-":
+        offset_minutes = -offset_minutes
+
+    if offset_minutes == 0:
+        offset = UTC
+    else:
+        offset = FixedOffset(offset_minutes)  # type: ignore
+
+    return datetime(
+        year=int(m.group("year")),
+        month=month,
+        day=int(m.group("day")),
+        hour=int(m.group("hour")),
+        minute=int(m.group("minute")),
+        second=int(m.group("second")),
+        tzinfo=offset,
+    )
+
+
+def is_leap_year(year: int) -> bool:
+    """
+    Indicates whether the specified year is a leap year.
+
+    Every year divisible by 4 is a leap year -- 1912, 1996, 2016, 2032, etc.,
+    are leap years -- UNLESS the year is divisible by 100 AND NOT by 400. Thus,
+    1200, 1600, 2000, 2400, etc., are leap years, while 1800, 1900, 2100, etc.,
+    are not.
+
+    Why do we have this logic?
+    This is because the earth orbits the sun in approximately 365.2425 days.
+    Over 400 orbits, that comes out to 146,097 days (365.2425 * 400).
+
+    Ignoring the century rule (making every fourth year a leap year, including
+    1800, 1900, etc.), gives us 146,100 days, overcounting by 3 days every
+    400 years. Thus, making 3 out of every 4 century boundaries non-leap years
+    fixes this overcounting.
+    """
+    return year % 400 == 0 or (year % 4 == 0 and year % 100 != 0)

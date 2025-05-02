@@ -4,20 +4,23 @@ import { request as __request } from "./core/request"
 
 import type {
   Body_login_login_access_token,
+  CredentialCreate,
+  CredentialPublic,
+  CredentialsPublic,
   Message,
   NewPassword,
+  ParameterCreate,
+  ParameterPublic,
+  ParameterUpdate,
+  ParametersPublic,
   Token,
-  UserPublic,
   UpdatePassword,
   UserCreate,
+  UserPublic,
   UserRegister,
-  UsersPublic,
   UserUpdate,
   UserUpdateMe,
-  ItemCreate,
-  ItemPublic,
-  ItemsPublic,
-  ItemUpdate,
+  UsersPublic,
 } from "./models"
 
 export type TDataLoginAccessToken = {
@@ -33,6 +36,7 @@ export type TDataRecoverPasswordHtmlContent = {
   email: string
 }
 
+// biome-ignore lint/complexity/noStaticOnlyClass: project has been built as is
 export class LoginService {
   /**
    * Login Access Token
@@ -50,7 +54,7 @@ export class LoginService {
       formData: formData,
       mediaType: "application/x-www-form-urlencoded",
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -85,7 +89,7 @@ export class LoginService {
         email,
       },
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -106,7 +110,7 @@ export class LoginService {
       body: requestBody,
       mediaType: "application/json",
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -128,7 +132,7 @@ export class LoginService {
         email,
       },
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -161,6 +165,7 @@ export type TDataDeleteUser = {
   userId: string
 }
 
+// biome-ignore lint/complexity/noStaticOnlyClass: project has been built as is
 export class UsersService {
   /**
    * Read Users
@@ -180,7 +185,7 @@ export class UsersService {
         limit,
       },
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -201,7 +206,7 @@ export class UsersService {
       body: requestBody,
       mediaType: "application/json",
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -248,7 +253,7 @@ export class UsersService {
       body: requestBody,
       mediaType: "application/json",
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -269,7 +274,7 @@ export class UsersService {
       body: requestBody,
       mediaType: "application/json",
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -290,7 +295,7 @@ export class UsersService {
       body: requestBody,
       mediaType: "application/json",
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -312,7 +317,7 @@ export class UsersService {
         user_id: userId,
       },
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -336,7 +341,7 @@ export class UsersService {
       body: requestBody,
       mediaType: "application/json",
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -356,7 +361,7 @@ export class UsersService {
         user_id: userId,
       },
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -366,6 +371,7 @@ export type TDataTestEmail = {
   emailTo: string
 }
 
+// biome-ignore lint/complexity/noStaticOnlyClass: project has been built as is
 export class UtilsService {
   /**
    * Test Email
@@ -382,7 +388,7 @@ export class UtilsService {
         email_to: emailTo,
       },
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
@@ -400,129 +406,237 @@ export class UtilsService {
   }
 }
 
-export type TDataReadItems = {
+export type TDataReadCredentials = {
   limit?: number
   skip?: number
 }
-export type TDataCreateItem = {
-  requestBody: ItemCreate
+export type TDataCreateCredential = {
+  requestBody: CredentialCreate
 }
-export type TDataReadItem = {
+export type TDataReadCredential = {
   id: string
 }
-export type TDataUpdateItem = {
-  id: string
-  requestBody: ItemUpdate
-}
-export type TDataDeleteItem = {
+export type TDataDeleteCredential = {
   id: string
 }
 
-export class ItemsService {
+// biome-ignore lint/complexity/noStaticOnlyClass: project has been built as is
+export class CredentialsService {
   /**
-   * Read Items
-   * Retrieve items.
-   * @returns ItemsPublic Successful Response
+   * Read Credentials
+   * Retrieve credentials.
+   * @returns CredentialsPublic Successful Response
    * @throws ApiError
    */
-  public static readItems(
-    data: TDataReadItems = {},
-  ): CancelablePromise<ItemsPublic> {
+  public static readCredentials(
+    data: TDataReadCredentials = {},
+  ): CancelablePromise<CredentialsPublic> {
     const { limit = 100, skip = 0 } = data
     return __request(OpenAPI, {
       method: "GET",
-      url: "/api/v1/items/",
+      url: "/api/v1/credentials/",
       query: {
         skip,
         limit,
       },
-      errors: {
-        422: `Validation Error`,
-      },
     })
   }
 
   /**
-   * Create Item
-   * Create new item.
-   * @returns ItemPublic Successful Response
+   * Create Credential
+   * Create new credential.
+   * @returns CredentialPublic Successful Response
    * @throws ApiError
    */
-  public static createItem(
-    data: TDataCreateItem,
-  ): CancelablePromise<ItemPublic> {
+  public static createCredential(
+    data: TDataCreateCredential,
+  ): CancelablePromise<CredentialPublic> {
     const { requestBody } = data
     return __request(OpenAPI, {
       method: "POST",
-      url: "/api/v1/items/",
+      url: "/api/v1/credentials/",
       body: requestBody,
       mediaType: "application/json",
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
 
   /**
-   * Read Item
-   * Get item by ID.
-   * @returns ItemPublic Successful Response
+   * Read Credential
+   * Get credential by ID.
+   * @returns CredentialPublic Successful Response
    * @throws ApiError
    */
-  public static readItem(data: TDataReadItem): CancelablePromise<ItemPublic> {
+  public static readCredential(
+    data: TDataDeleteCredential,
+  ): CancelablePromise<CredentialPublic> {
     const { id } = data
     return __request(OpenAPI, {
       method: "GET",
-      url: "/api/v1/items/{id}",
+      url: "/api/v1/credentials/{id}",
       path: {
         id,
       },
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
 
   /**
-   * Update Item
-   * Update an item.
-   * @returns ItemPublic Successful Response
+   * Delete Credential
+   * Delete a credential.
+   * @returns Message Successful Response
    * @throws ApiError
    */
-  public static updateItem(
-    data: TDataUpdateItem,
-  ): CancelablePromise<ItemPublic> {
-    const { id, requestBody } = data
+  public static deleteCredential(
+    data: TDataDeleteCredential,
+  ): CancelablePromise<Message> {
+    const { id } = data
     return __request(OpenAPI, {
-      method: "PUT",
-      url: "/api/v1/items/{id}",
+      method: "DELETE",
+      url: "/api/v1/credentials/{id}",
       path: {
         id,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+}
+
+export type TDataReadParameters = {
+  limit?: number
+  skip?: number
+}
+export type TDataCreateParameter = {
+  requestBody: ParameterCreate
+}
+export type TDataReadParameter = {
+  Name: string
+}
+export type TDataUpdateParameter = {
+  Name: string
+  requestBody: ParameterUpdate
+}
+export type TDataDeleteParameter = {
+  Name: string
+}
+
+// biome-ignore lint/complexity/noStaticOnlyClass: project has been built as is
+export class ParametersService {
+  /**
+   * Read Parameters
+   * Retrieve parameters.
+   * @returns ParametersPublic Successful Response
+   * @throws ApiError
+   */
+  public static readParameters(
+    data: TDataReadParameters = {},
+  ): CancelablePromise<ParametersPublic> {
+    const { limit = 100, skip = 0 } = data
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/parameters/",
+      query: {
+        skip,
+        limit,
+        with_decryption: true,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Create Parameter
+   * Create new parameter.
+   * @returns ParameterPublic Successful Response
+   * @throws ApiError
+   */
+  public static createParameter(
+    data: TDataCreateParameter,
+  ): CancelablePromise<ParameterPublic> {
+    const { requestBody } = data
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/parameters/",
+      body: requestBody,
+      mediaType: "application/json",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Read Parameter
+   * Get parameter by ID.
+   * @returns ParameterPublic Successful Response
+   * @throws ApiError
+   */
+  public static readParameter(
+    data: TDataReadParameter,
+  ): CancelablePromise<ParameterPublic> {
+    const { Name } = data
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/parameters/{Name}",
+      path: {
+        Name,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Update Parameter
+   * Update a parameter.
+   * @returns ParameterPublic Successful Response
+   * @throws ApiError
+   */
+  public static updateParameter(
+    data: TDataUpdateParameter,
+  ): CancelablePromise<ParameterPublic> {
+    const { Name, requestBody } = data
+    return __request(OpenAPI, {
+      method: "PUT",
+      url: "/api/v1/parameters/{Name}",
+      path: {
+        Name,
       },
       body: requestBody,
       mediaType: "application/json",
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }
 
   /**
-   * Delete Item
-   * Delete an item.
+   * Delete Parameter
+   * Delete a parameter.
    * @returns Message Successful Response
    * @throws ApiError
    */
-  public static deleteItem(data: TDataDeleteItem): CancelablePromise<Message> {
-    const { id } = data
+  public static deleteParameter(
+    data: TDataDeleteParameter,
+  ): CancelablePromise<Message> {
+    const { Name } = data
     return __request(OpenAPI, {
       method: "DELETE",
-      url: "/api/v1/items/{id}",
+      url: "/api/v1/parameters/{Name}",
       path: {
-        id,
+        Name,
       },
       errors: {
-        422: `Validation Error`,
+        422: "Validation Error",
       },
     })
   }

@@ -1,9 +1,9 @@
 import axios from "axios"
 import type {
   AxiosError,
+  AxiosInstance,
   AxiosRequestConfig,
   AxiosResponse,
-  AxiosInstance,
 } from "axios"
 
 import { ApiError } from "./ApiError"
@@ -74,7 +74,10 @@ const getUrl = (config: OpenAPIConfig, options: ApiRequestOptions): string => {
   const path = options.url
     .replace("{api-version}", config.VERSION)
     .replace(/{(.*?)}/g, (substring: string, group: string) => {
-      if (options.path?.hasOwnProperty(group)) {
+      if (
+        options.path &&
+        Object.prototype.hasOwnProperty.call(options.path, group)
+      ) {
         return encoder(String(options.path[group]))
       }
       return substring
@@ -151,12 +154,12 @@ export const getHeaders = async (
     )
 
   if (isStringWithValue(token)) {
-    headers["Authorization"] = `Bearer ${token}`
+    headers.Authorization = `Bearer ${token}`
   }
 
   if (isStringWithValue(username) && isStringWithValue(password)) {
     const credentials = base64(`${username}:${password}`)
-    headers["Authorization"] = `Basic ${credentials}`
+    headers.Authorization = `Basic ${credentials}`
   }
 
   if (options.body !== undefined) {
