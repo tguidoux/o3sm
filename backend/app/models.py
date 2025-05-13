@@ -122,16 +122,15 @@ class CredentialsPublic(SQLModel):
 # }
 class ParameterBase(SQLModel):
     Name: str = Field(
-        max_length=255,
         index=True,
         unique=True,
         primary_key=True,
         nullable=False,
     )
-    Value: str = Field(max_length=255, nullable=False)
-    Type: str = Field(max_length=255, default="string")
+    Value: str = Field(nullable=False)
+    Type: str = Field(default="string")
     Version: int = Field(default=1)
-    DataType: str = Field(max_length=255, default="text")
+    DataType: str = Field(default="text")
     ARN: str = Field(nullable=False, default="")
 
 
